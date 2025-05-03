@@ -84,11 +84,6 @@ const ProfileInfo = () => {
               icon: "heroicons:user",
               href: "/profile",
             },
-            {
-              name: "Billing",
-              icon: "heroicons:megaphone",
-              href: "/dashboard",
-            },
           ].map((item, index) => (
             <Link
               href={item.href}
@@ -112,12 +107,6 @@ const ProfileInfo = () => {
             <DropdownMenuPortal>
               <DropdownMenuSubContent>
                 {[
-                  {
-                    name: "portal",
-                  },
-                  {
-                    name: "slack",
-                  },
                   {
                     name: "whatsapp",
                   },

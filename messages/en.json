@@ -15,7 +15,8 @@
     "Attribute Value": "Attribute Value",
     "Country": "Country",
     "State": "State",
-    "UOM": "UOM"
+    "UOM": "UOM",
+    "Profile": "Profile"
   },
   "DashboardPage": {
     "welcome": "Welcome",

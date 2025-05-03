@@ -13,7 +13,7 @@ const Hero = () => {
             <div className="w-full">
               <div>
                 <h1 className="max-w-[600px] mx-auto text-xl md:text-2xl xl:text-4xl xl:leading-[52px] font-semibold  text-pink-700 text-center">
-                  <span className="text-primary">Calling Expert</span>
+                  <span className="text-primary">Calling Experts</span>
                 </h1>
               </div>
               <div>
@@ -24,11 +24,11 @@ const Hero = () => {
               </div>
               <div className="flex mt-9 justify-center gap-4 lg:gap-8">
                 <Button asChild size="xl">
-                  <Link href="/login">Go to Login Page </Link>
+                  <Link href="/login">Login</Link>
                 </Button>
 
                 <Button asChild size="xl">
-                  <Link href="/register">Go to Signup Page </Link>
+                  <Link href="/register">Signup</Link>
                 </Button>
               </div>
             </div>

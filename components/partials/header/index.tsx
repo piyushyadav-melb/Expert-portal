@@ -31,8 +31,8 @@ const NavTools = ({
       {isDesktop && <FullScreen />}
 
       <ThemeButton />
-      <Inbox />
-      <NotificationMessage />
+      {/* <Inbox /> */}
+      {/* <NotificationMessage /> */}
 
       <div className="ltr:pl-2 rtl:pr-2">
         <ProfileInfo />
@@ -41,11 +41,7 @@ const NavTools = ({
     </div>
   );
 };
-const Header = ({
-  handleOpenSearch,
-}: {
-  handleOpenSearch: () => void;
-}) => {
+const Header = ({ handleOpenSearch }: { handleOpenSearch: () => void }) => {
   const { collapsed, sidebarType, setCollapsed, subMenu, setSidebarType } =
     useSidebar();
   const { layout, navbarType, setLayout } = useThemeStore();
@@ -81,7 +77,7 @@ const Header = ({
         </div>
         {isDesktop && (
           <div className=" bg-card bg-card/90 backdrop-blur-lg  w-full px-6  shadow-md">
-            <HorizontalMenu/>
+            <HorizontalMenu />
           </div>
         )}
       </ClassicHeader>
