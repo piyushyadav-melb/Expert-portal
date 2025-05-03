@@ -133,7 +133,7 @@ export function StepTwo({ onComplete, onBack, initialData }: StepTwoProps) {
   }, [videoPreviewUrl]);
 
   const handleAddKeyword = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" && newKeyword.trim()) {
+    if ((e.key === "Enter" || e.key === "Search") && newKeyword.trim()) {
       e.preventDefault();
       if (!keywords.includes(newKeyword.trim())) {
         setKeywords([...keywords, newKeyword.trim()]);
@@ -366,13 +366,32 @@ export function StepTwo({ onComplete, onBack, initialData }: StepTwoProps) {
                 </Badge>
               ))}
             </div>
-            <Input
-              placeholder="Type keywords and press Enter"
-              value={newKeyword}
-              onChange={(e) => setNewKeyword(e.target.value)}
-              onKeyDown={handleAddKeyword}
-              disabled={isLoading}
-            />
+            <div className="flex gap-2">
+              <Input
+                placeholder="Type keywords and press Enter"
+                value={newKeyword}
+                onChange={(e) => setNewKeyword(e.target.value)}
+                onKeyDown={handleAddKeyword}
+                disabled={isLoading}
+                type="search"
+              />
+              <Button
+                type="button"
+                onClick={() => {
+                  if (
+                    newKeyword.trim() &&
+                    !keywords.includes(newKeyword.trim())
+                  ) {
+                    setKeywords([...keywords, newKeyword.trim()]);
+                    setNewKeyword("");
+                  }
+                }}
+                disabled={isLoading || !newKeyword.trim()}
+                variant="outline"
+              >
+                Add
+              </Button>
+            </div>
           </div>
 
           <div>
