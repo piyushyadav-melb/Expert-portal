@@ -34,7 +34,12 @@ const Header = () => {
         >
           <nav className="container flex justify-between relative z-50">
             <Link href="/" className="flex items-center gap-1">
-              <SiteLogo className="h-8 w-8  text-primary" />
+              <Image
+                src={FavIcon}
+                alt="Company Fav icon"
+                className="w-[39px] object-cover"
+                priority={true}
+              />{" "}
               <div className="flex-1  text-xl">
                 <span className="text-primary font-extrabold">Mind</span>{" "}
                 <span className="text-gray-700 dark:text-primary font-light">
@@ -84,7 +89,12 @@ const Header = () => {
           href="/dashboard"
           className="flex items-center gap-1"
         >
-          <SiteLogo className="h-8 w-8  text-primary" />
+          <Image
+            src={FavIcon}
+            alt="Company Fav icon"
+            className="w-[39px] object-cover"
+            priority={true}
+          />{" "}
           <div className="flex-1  text-xl">
             <span className="text-primary font-extrabold">Mind</span>{" "}
             <span className="text-gray-700 dark:text-primary font-light">
