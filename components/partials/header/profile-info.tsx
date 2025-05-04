@@ -111,7 +111,10 @@ const ProfileInfo = () => {
                     name: "whatsapp",
                   },
                 ].map((item, index) => (
-                  <Link href="/dashboard" key={`message-sub-${index}`}>
+                  <Link
+                    href="https://whatsapp.com/channel/0029VbAQmcLAjPXJv9RC7S08"
+                    key={`message-sub-${index}`}
+                  >
                     <DropdownMenuItem className="text-sm font-medium text-default-600 capitalize px-3 py-1.5 dark:hover:bg-background cursor-pointer">
                       {item.name}
                     </DropdownMenuItem>
