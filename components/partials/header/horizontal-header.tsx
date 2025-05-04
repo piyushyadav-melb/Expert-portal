@@ -25,8 +25,8 @@ const horizontalHeader = ({
           />
           <span className=" text-xl lg:inline-block hidden">
             {" "}
-            <span className="text-primary font-extrabold">Calling</span>{" "}
-            <span className="text-gray-700 font-light">Experts</span>
+            <span className="text-primary font-extrabold">Mind</span>{" "}
+            <span className="text-gray-700 font-light">Namo</span>
           </span>
         </Link>
       </div>

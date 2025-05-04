@@ -139,8 +139,8 @@ export default function ResetPassword() {
                 priority={true}
               />
               <div className="flex-1 text-2xl">
-                <span className="text-primary font-extrabold">Calling</span>{" "}
-                <span className="text-foreground font-light">Expert</span>
+                <span className="text-primary font-extrabold">Mind</span>{" "}
+                <span className="text-foreground font-light">Namo</span>
               </div>
             </Link>
 

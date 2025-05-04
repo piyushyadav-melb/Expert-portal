@@ -81,8 +81,8 @@ const Login = () => {
           priority={true}
         />
         <div className="flex-1  text-2xl">
-          <span className="text-primary font-extrabold">Calling</span>{" "}
-          <span className="text-gray-700 font-light">Expert</span>
+          <span className="text-primary font-extrabold">Mind</span>{" "}
+          <span className="text-gray-700 font-light">Namo</span>
         </div>
       </Link>
       <div className="2xl:mt-8 mt-6 2xl:text-3xl text-2xl font-bold text-default-900">

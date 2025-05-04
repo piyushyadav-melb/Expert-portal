@@ -13,7 +13,7 @@ const Hero = () => {
             <div className="w-full">
               <div>
                 <h1 className="max-w-[600px] mx-auto text-xl md:text-2xl xl:text-4xl xl:leading-[52px] font-semibold  text-pink-700 text-center">
-                  <span className="text-primary">Calling Experts</span>
+                  <span className="text-primary">Mind Namo</span>
                 </h1>
               </div>
               <div>

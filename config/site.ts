@@ -1,10 +1,10 @@
 export const siteConfig = {
-  name: "Calling Expert",
+  name: "Mind Namo",
   description: null,
-  theme: "violet",
+  theme: "blue",
   layout: "vertical", //semi-box, horizontal, vertical
   hideSideBar: false,
-  sidebarType: "module", //popover, classic, module
+  sidebarType: "classic", //popover, classic, module
   sidebarColor: null,
   navbarType: "sticky", //sticky, floating, static
   footerType: "static", //sticky,  static, hidden

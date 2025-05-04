@@ -36,16 +36,16 @@ const Header = () => {
             <Link href="/" className="flex items-center gap-1">
               <SiteLogo className="h-8 w-8  text-primary" />
               <div className="flex-1  text-xl">
-                <span className="text-primary font-extrabold">Calling</span>{" "}
+                <span className="text-primary font-extrabold">Mind</span>{" "}
                 <span className="text-gray-700 dark:text-primary font-light">
-                  Expert
+                  Namo
                 </span>
               </div>
             </Link>
 
             <div className="flex items-center gap-6">
               <ThemeButton />
-              <Button asChild size="sm">
+              {/* <Button asChild size="sm">
                 <Link
                   href="https://1.envato.market/TrexoPro-regular"
                   target="__blank"
@@ -57,13 +57,13 @@ const Header = () => {
                   />
                   Buy Now
                 </Link>
-              </Button>
-              <button type="button">
+              </Button> */}
+              {/* <button type="button">
                 <Menu
                   className=" h-6 w-6 cursor-pointer"
                   onClick={() => setOpen(!open)}
                 />
-              </button>
+              </button> */}
             </div>
           </nav>
         </div>
@@ -86,9 +86,9 @@ const Header = () => {
         >
           <SiteLogo className="h-8 w-8  text-primary" />
           <div className="flex-1  text-xl">
-            <span className="text-primary font-extrabold">Calling</span>{" "}
+            <span className="text-primary font-extrabold">Mind</span>{" "}
             <span className="text-gray-700 dark:text-primary font-light">
-              Expert
+              Namo
             </span>
           </div>
         </Link>
