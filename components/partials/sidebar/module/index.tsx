@@ -1,15 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { cn, isLocationMatch, getDynamicPath, translate } from "@/lib/utils";
-import { menusConfig, ModernNavType, } from "@/config/menus";
+import { menusConfig, ModernNavType } from "@/config/menus";
 import SingleIconMenu from "./single-icon-menu";
 import { useRouter, usePathname } from "next/navigation";
 import { useSidebar, useThemeStore } from "@/store";
 import MenuItem from "./menu-item";
 import NestedMenus from "./nested-menus";
-import Image from "next/image";
 import Link from "next/link";
 import FooterMenu from "./footer-menu";
-import { SiteLogo } from "@/components/svg";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import LogoutFooter from "./logout-footer";
 import { useMediaQuery } from "@/hooks/use-media-query";
@@ -17,9 +15,10 @@ import MenuOverlayPortal from "./MenuOverlayPortal";
 import { ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTranslations } from "next-intl";
-
+import Image from "next/image";
+import FavIcon from "@/public/images/all-img/fav-icon.png";
 const ModuleSidebar = () => {
-  const t = useTranslations('Menu');
+  const t = useTranslations("Menu");
   const menus: any = menusConfig?.sidebarNav?.modern || [];
   const { subMenu, setSubmenu, collapsed, setCollapsed, sidebarBg } =
     useSidebar();
@@ -83,7 +82,11 @@ const ModuleSidebar = () => {
     setSubmenu(false);
     setCollapsed(false);
   }
-  function setActiveNestedMenu(menuIndex: number, nestedMenuIndex: number, childMenu: any) {
+  function setActiveNestedMenu(
+    menuIndex: number,
+    nestedMenuIndex: number,
+    childMenu: any
+  ) {
     setActiveIndex(menuIndex);
     setNestedIndex(nestedMenuIndex);
     setCurrentSubMenu(childMenu);
@@ -136,7 +139,6 @@ const ModuleSidebar = () => {
           });
         }
       });
-
     });
     if (!isMenuMatched) {
       setSubmenu(false);
@@ -161,7 +163,12 @@ const ModuleSidebar = () => {
         >
           <div className=" pt-4 ">
             <Link href="/dashboard">
-              <SiteLogo className=" mx-auto text-primary h-8 w-8" />
+              <Image
+                src={FavIcon}
+                alt="Company Fav icon"
+                className="w-[39px] object-cover"
+                priority={true}
+              />{" "}
             </Link>
           </div>
           {/* end logo */}

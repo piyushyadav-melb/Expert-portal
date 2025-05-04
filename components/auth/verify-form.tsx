@@ -2,8 +2,9 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ChangeEvent, KeyboardEvent, useRef, useState } from "react";
-import { SiteLogo } from "../svg";
 import Link from "next/link";
+import Image from "next/image";
+import FavIcon from "@/public/images/all-img/fav-icon.png";
 
 const VerfiyForm = () => {
   const totalOtpField = 6;
@@ -23,9 +24,12 @@ const VerfiyForm = () => {
       }
     }
   };
-  const handleKeyDown = (index: number, event: KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = (
+    index: number,
+    event: KeyboardEvent<HTMLInputElement>
+  ) => {
     if (event.key === "Backspace" && otp[index] === "" && index > 0) {
-      setOtp(prevOtp => {
+      setOtp((prevOtp) => {
         const newOtp = [...prevOtp];
         newOtp[index - 1] = "";
         return newOtp;
@@ -49,7 +53,12 @@ const VerfiyForm = () => {
   return (
     <div className="w-full md:w-[480px] py-5">
       <Link href="/dashboard" className="inline-block">
-        <SiteLogo className="h-10 w-10 2xl:h-14 2xl:w-14 text-primary" />
+        <Image
+          src={FavIcon}
+          alt="Company Fav icon"
+          className="w-[39px] object-cover"
+          priority={true}
+        />{" "}
       </Link>
       <div className="2xl:mt-8 mt-6 2xl:text-3xl text-2xl font-bold text-default-900">
         Two Factor Verification

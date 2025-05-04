@@ -3,10 +3,10 @@ import { useSidebar, useThemeStore } from "@/store";
 import { cn } from "@/lib/utils";
 import { Icon } from "@iconify/react";
 import { Search } from "lucide-react";
-import { SiteLogo } from "@/components/svg";
 import Link from "next/link";
 import { useMediaQuery } from "@/hooks/use-media-query";
-
+import Image from "next/image";
+import FavIcon from "@/public/images/all-img/fav-icon.png";
 const MenuBar = ({
   collapsed,
   setCollapsed,
@@ -76,7 +76,12 @@ const VerticalHeader: React.FC<VerticalHeaderProps> = ({
 
   const MainLogo = (
     <Link href="/dashboard" className=" text-primary ">
-      <SiteLogo className="h-7 w-7" />
+      <Image
+        src={FavIcon}
+        alt="Company Fav icon"
+        className="w-[39px] object-cover"
+        priority={true}
+      />{" "}
     </Link>
   );
   const SearchButton = (

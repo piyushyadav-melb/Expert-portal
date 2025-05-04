@@ -1,6 +1,5 @@
 import React from "react";
 import { Search } from "lucide-react";
-import { SiteLogo } from "@/components/svg";
 import Link from "next/link";
 import Image from "next/image";
 import FavIcon from "@/public/images/all-img/fav-icon.png";

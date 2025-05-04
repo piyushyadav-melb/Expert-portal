@@ -1,6 +1,5 @@
 "use client";
 import React from "react";
-import { SiteLogo } from "@/components/svg";
 import { Loader2 } from "lucide-react";
 import Image from "next/image";
 import FavIcon from "@/public/images/all-img/fav-icon.png";

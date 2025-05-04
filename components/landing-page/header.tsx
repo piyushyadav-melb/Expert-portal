@@ -9,7 +9,6 @@ import ThemeButton from "@/components/partials/header/theme-button";
 import { Button } from "@/components/ui/button";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import FavIcon from "@/public/images/all-img/fav-icon.png";
-import { SiteLogo } from "../svg";
 
 const Header = () => {
   const [scroll, setScroll] = useState<boolean>(false);
