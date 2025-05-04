@@ -81,12 +81,11 @@ const Login = () => {
           priority={true}
         />
         <div className="flex-1  text-2xl">
-          <span className="text-primary font-extrabold">Mind</span>{" "}
-          <span className="text-gray-700 font-light">Namo</span>
+          <h1 className="text-black font-bold">MINDNAMO</h1>
         </div>
       </Link>
       <div className="2xl:mt-8 mt-6 2xl:text-3xl text-2xl font-bold text-default-900">
-        Hey, Hello 👋
+        WELCOME EXPERTS
       </div>
       <form onSubmit={handleSubmit(onSubmit)} className="mt-5 2xl:mt-7">
         <div>

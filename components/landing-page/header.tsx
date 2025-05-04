@@ -40,7 +40,7 @@ const Header = () => {
                 priority={true}
               />{" "}
               <div className="flex-1  text-xl">
-                <h1 className="text-blue-700 font-extrabold">Mind Namo</h1>
+                <h1 className="text-blue-700 font-bold">MINDNAMO.COM</h1>
               </div>
             </Link>
 
@@ -92,7 +92,7 @@ const Header = () => {
             priority={true}
           />{" "}
           <div className="flex-1  text-xl">
-            <h1 className="text-blue-700 font-extrabold">Mind Namo</h1>
+            <h1 className="text-blue-700 font-extrabold">MINDNAMO.COM</h1>
           </div>
         </Link>
         {/* <NavMenu /> */}

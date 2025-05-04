@@ -19,8 +19,8 @@ const SidebarLogo = ({ hovered }: { hovered?: boolean }) => {
           />
           {(!collapsed || hovered) && (
             <div className="flex-1  text-xl">
-              <span className="text-primary font-extrabold">Trexo</span>{" "}
-              <span className="text-gray-700 font-light">Pro</span>
+              <span className="text-primary font-extrabold">Mind</span>{" "}
+              <span className="text-gray-700 font-light">Namo</span>
             </div>
           )}
         </div>
