@@ -12,8 +12,8 @@ const Hero = () => {
           <div className=" relative z-10 h-screen flex items-center">
             <div className="w-full">
               <div>
-                <h1 className="max-w-[600px] mx-auto text-xl md:text-2xl xl:text-4xl xl:leading-[52px] font-semibold  text-pink-700 text-center">
-                  <span className="text-primary">Mind Namo</span>
+                <h1 className="max-w-[600px] mx-auto text-xl md:text-2xl xl:text-4xl xl:leading-[52px] font-semibold  text-center">
+                  <span className="text-blue-700">Mind Namo</span>
                 </h1>
               </div>
               <div>
@@ -23,11 +23,19 @@ const Hero = () => {
                 </p>
               </div>
               <div className="flex mt-9 justify-center gap-4 lg:gap-8">
-                <Button asChild size="xl">
+                <Button
+                  asChild
+                  size="xl"
+                  className="bg-blue-700 hover:bg-blue-500"
+                >
                   <Link href="/login">Login</Link>
                 </Button>
 
-                <Button asChild size="xl">
+                <Button
+                  asChild
+                  size="xl"
+                  className="bg-blue-700 hover:bg-blue-500"
+                >
                   <Link href="/register">Signup</Link>
                 </Button>
               </div>
