@@ -3,8 +3,11 @@ import { Button } from "@/components/ui/button";
 
 const Hero = () => {
   return (
-    <section className="bg-white " id="home">
-      <div className="bg-white dark:from-primary/20 dark:to-[#0F172A]">
+    <section
+      className="bg-[url(https://dashboi-one.vercel.app/images/home/hero-bg.png)] bg-cover bg-no-repeat relative "
+      id="home"
+    >
+      <div className="bg-white dark:bg-[#0F172A]">
         <div className="container">
           <div className=" relative z-10 h-screen flex items-center">
             <div className="w-full">
