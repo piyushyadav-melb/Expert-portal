@@ -1,5 +1,5 @@
 import { DashBoard, Settings, User } from "@/components/svg";
-import { LayoutDashboard, CalendarClock, BookOpen, Video } from "lucide-react";
+import { LayoutDashboard, CalendarClock, BookOpen, Video, MessageCircle } from "lucide-react";
 
 export interface MenuItemProps {
   title: string;
@@ -35,6 +35,11 @@ export const menusConfig = {
       href: "/meetings",
     },
     {
+      title: "Chat",
+      icon: MessageCircle,
+      href: "/chat",
+    },
+    {
       title: "Profile",
       icon: User,
       href: "/profile",
@@ -61,6 +66,11 @@ export const menusConfig = {
         title: "Meetings",
         icon: Video,
         href: "/meetings",
+      },
+      {
+        title: "Chat",
+        icon: MessageCircle,
+        href: "/chat",
       },
       {
         title: "Profile",
@@ -92,6 +102,11 @@ export const menusConfig = {
         title: "Meetings",
         icon: Video,
         href: "/meetings",
+      },
+      {
+        title: "Chat",
+        icon: MessageCircle,
+        href: "/chat",
       },
       {
         title: "Profile",

@@ -16,7 +16,8 @@
     "Country": "Country",
     "State": "State",
     "UOM": "UOM",
-    "Profile": "Profile"
+    "Profile": "Profile",
+    "Chat": "Chat"
   },
   "DashboardPage": {
     "welcome": "Welcome",
