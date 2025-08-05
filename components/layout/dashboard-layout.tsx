@@ -16,6 +16,7 @@ import { useMounted } from "@/hooks/use-mounted";
 import { useAppSelector } from "@/hooks";
 import { fetchProfile } from "@/service/profile.service";
 import toast from "react-hot-toast";
+import { useSocket } from "@/config/use-socket";
 interface IDashboardLayoutProps {
   children: ReactNode;
 }
@@ -76,6 +77,7 @@ const DashboardLayout: React.FC<IDashboardLayoutProps> = ({ children }) => {
   const isMobile = useMediaQuery("(min-width: 768px)");
   const mounted = useMounted();
   const navigation = useRouter();
+  const socket = useSocket();
 
   const fetchProfileData = async () => {
     const response: any = await fetchProfile();
@@ -86,8 +88,8 @@ const DashboardLayout: React.FC<IDashboardLayoutProps> = ({ children }) => {
         response?.data?.step_completed == "0"
           ? "step-1"
           : response?.data?.step_completed == "1"
-          ? "step-2"
-          : "step-3";
+            ? "step-2"
+            : "step-3";
       console.log("step", step);
       toast.error("Please complete your profile to continue");
       navigation.replace(`onboarding/${step}`);

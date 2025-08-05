@@ -25,6 +25,10 @@ export interface Message {
   content: string;
   is_read: boolean;
   timestamp: string;
+  imageLink?: string;
+  videoLink?: string;
+  audioLink?: string;
+  documentLink?: string;
 }
 
 export const createOrGetChatRoom = async (customerId: string) => {
@@ -65,5 +69,55 @@ export const getUnreadMessageCount = async () => {
 
 export const getChattedCustomers = async () => {
   const response = await privateClient.get("/chat/customers");
+  return response.data.data;
+};
+
+export interface FileUploadResponse {
+  id: string;
+  fileName: string;
+  fileDescription: string;
+  fileType: 'image' | 'video' | 'audio' | 'document';
+  previewUrl: string;
+  fileUrl: string;
+  fileKey: string;
+  fileSize: number;
+  mimeType: string;
+  uploadedBy: string;
+  uploadedByType: 'CUSTOMER' | 'EXPERT';
+  createdAt: string;
+}
+
+export const uploadFile = async (
+  file: File,
+  fileType: 'image' | 'video' | 'audio' | 'document',
+  fileDescription?: string
+): Promise<FileUploadResponse> => {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('fileType', fileType);
+  if (fileDescription) {
+    formData.append('fileDescription', fileDescription);
+  }
+
+  const response = await privateClient.post("/file/expert/upload", formData);
+  return response.data.data;
+};
+
+export interface ChatRoomFile {
+  id: string;
+  senderId: string;
+  senderType: "CUSTOMER" | "EXPERT";
+  timestamp: string;
+  files: {
+    imageLink?: string;
+    videoLink?: string;
+    audioLink?: string;
+    documentLink?: string;
+    fileName?: string;
+  };
+}
+
+export const getChatRoomFiles = async (chatRoomId: string): Promise<ChatRoomFile[]> => {
+  const response = await privateClient.get(`/chat/room/${chatRoomId}`);
   return response.data.data;
 };

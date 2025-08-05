@@ -52,9 +52,6 @@ export const isValidTimeSlot = (slot: any) => {
   return slot.start && slot.end;
 };
 
-// ... existing code ...
-
-// Helper function to extract time in AM/PM format from ISO timestamp
 // Helper function to extract time in AM/PM format from ISO timestamp
 // Shows date if more than 1 day old
 export const getTimeFromTimestamp = (timestamp: string) => {
@@ -80,4 +77,21 @@ export const getTimeFromTimestamp = (timestamp: string) => {
 
   // If today, return only time
   return timeFormatted;
+};
+
+// Helper function to determine file type from MIME type
+export const getFileTypeFromMimeType = (mimeType: string): 'image' | 'video' | 'audio' | 'document' => {
+  if (mimeType.startsWith('image/')) return 'image';
+  if (mimeType.startsWith('video/')) return 'video';
+  if (mimeType.startsWith('audio/')) return 'audio';
+  return 'document';
+};
+
+// Helper function to format file size
+export const formatFileSize = (bytes: number): string => {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 };

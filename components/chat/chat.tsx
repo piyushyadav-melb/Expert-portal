@@ -90,7 +90,7 @@ const Chat: React.FC = () => {
 
                 {/* Customer Profile */}
                 <div className="w-full md:flex-1 lg:block order-3">
-                    <CustomerProfile customer={customer} />
+                    <CustomerProfile customer={customer} chatRoomId={selectedRoom?.id} />
                 </div>
             </div>
         </div>

@@ -1,7 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { getChatRoomFiles, type ChatRoomFile } from "@/service/chat.service";
 
-const CustomerProfile = ({ customer }) => {
-    const [showAllDocuments, setShowAllDocuments] = useState(false);
+const CustomerProfile = ({ customer, chatRoomId }) => {
+    const [chatFiles, setChatFiles] = useState<ChatRoomFile[]>([]);
+    const [isLoadingFiles, setIsLoadingFiles] = useState(false);
 
     const getInitials = (name) => {
         if (!name) return "U";
@@ -12,32 +14,49 @@ const CustomerProfile = ({ customer }) => {
         return url && url !== '' && url !== 'null' && url !== 'undefined';
     };
 
-    const getFileIcon = (fileType) => {
-        // You can add different icons based on file type
-        const iconMap = {
-            'pdf': '/assets/pdf-icon.svg',
-            'doc': '/assets/doc-icon.svg',
-            'docx': '/assets/doc-icon.svg',
-            'xls': '/assets/excel-icon.svg',
-            'xlsx': '/assets/excel-icon.svg',
-            'txt': '/assets/txt-icon.svg',
-            'default': '/assets/file-icon.svg'
+
+
+    // Fetch chat room files
+    useEffect(() => {
+        const fetchChatFiles = async () => {
+            if (!chatRoomId) return;
+
+            setIsLoadingFiles(true);
+            try {
+                const files = await getChatRoomFiles(chatRoomId);
+                setChatFiles(files);
+            } catch (error) {
+                console.error("Failed to fetch chat files:", error);
+                setChatFiles([]);
+            } finally {
+                setIsLoadingFiles(false);
+            }
         };
 
-        return iconMap[fileType?.toLowerCase()] || iconMap.default;
+        fetchChatFiles();
+    }, [chatRoomId]);
+
+    const getFileTypeFromFile = (file: ChatRoomFile['files']) => {
+        if (file.imageLink) return 'image';
+        if (file.videoLink) return 'video';
+        if (file.audioLink) return 'audio';
+        if (file.documentLink) return 'document';
+        return null;
     };
 
-    const downloadFile = (fileUrl, fileName) => {
-        // Implement file download functionality
-        console.log("Download file:", fileName, fileUrl);
+    const getFileUrl = (file: ChatRoomFile['files']) => {
+        return file.imageLink || file.videoLink || file.audioLink || file.documentLink;
     };
 
-    const viewAllDocuments = () => {
-        setShowAllDocuments(!showAllDocuments);
+
+
+    const getFileName = (file: ChatRoomFile['files']) => {
+        return file.fileName;
     };
 
-    // Mock data - replace with actual data from customer prop
-    const recentDocuments = customer?.documents || [];
+    const openFile = (url: string) => {
+        window.open(url, '_blank');
+    };
 
     if (!customer) {
         return (
@@ -103,42 +122,99 @@ const CustomerProfile = ({ customer }) => {
 
             {/* Media, Links and Documents */}
             <div className="pb-2 px-4">
-                <div className="flex w-full justify-between items-center mb-5">
+                <div className="mb-5">
                     <h4 className="font-semibold text-sm relative">
                         Media, links and Documents
                         <span className="block absolute w-10 h-0.5 rounded-full bg-red-400 mt-1"></span>
                     </h4>
-                    {recentDocuments.length > 0 && (
-                        <button
-                            onClick={viewAllDocuments}
-                            className="text-gray-500 text-xs font-medium underline hover:text-gray-800 transition-colors"
-                        >
-                            {showAllDocuments ? 'Show Less' : 'View All'}
-                        </button>
-                    )}
                 </div>
 
-                {/* Documents List */}
-                {recentDocuments.length > 0 ? (
-                    <div className="space-y-2">
-                        {(showAllDocuments ? recentDocuments : recentDocuments.slice(0, 5)).map((doc, index) => (
-                            <div
-                                key={index}
-                                className="flex items-center space-x-3 py-2 border-b last:border-b-0 cursor-pointer hover:bg-gray-50 rounded px-2 transition-colors"
-                                onClick={() => downloadFile(doc.fileUrl, doc.fileName)}
-                            >
-                                <img
-                                    src={getFileIcon(doc.fileType)}
-                                    className="w-7 h-7 flex-shrink-0"
-                                    alt="file-icon"
-                                />
+                {/* Files List */}
+                {isLoadingFiles ? (
+                    <div className="flex justify-center items-center py-8">
+                        <div className="flex items-center space-x-2">
+                            <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
+                            <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce delay-100"></div>
+                            <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce delay-200"></div>
+                            <span className="ml-2 text-gray-600 text-sm">Loading files...</span>
+                        </div>
+                    </div>
+                ) : chatFiles.length > 0 ? (
+                    <div className="max-h-64 overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
+                        <div className="grid grid-cols-3 gap-2">
+                            {chatFiles.map((chatFile) => {
+                                const fileType = getFileTypeFromFile(chatFile.files);
+                                const fileUrl = getFileUrl(chatFile.files);
+                                const fileName = getFileName(chatFile.files);
 
-                                <div className="flex-1 min-w-0">
-                                    <h6 className="text-sm font-medium text-gray-900 truncate">{doc.fileName}</h6>
-                                    <span className="text-xs text-gray-500">{doc.uploadDate}</span>
-                                </div>
-                            </div>
-                        ))}
+                                if (!fileType || !fileUrl) return null;
+
+                                return (
+                                    <div
+                                        key={chatFile.id}
+                                        className="border rounded-lg p-2 hover:bg-gray-50 cursor-pointer transition-colors"
+                                        onClick={() => openFile(fileUrl)}
+                                    >
+                                        {/* Image Preview */}
+                                        {fileType === 'image' && (
+                                            <div className="mb-2">
+                                                <img
+                                                    src={fileUrl}
+                                                    className="w-full h-20 object-cover rounded-md"
+                                                    alt="Shared image"
+                                                />
+                                            </div>
+                                        )}
+
+                                        {/* Video Preview */}
+                                        {fileType === 'video' && (
+                                            <div className="mb-2 relative">
+                                                <video
+                                                    src={fileUrl}
+                                                    className="w-full h-20 object-cover rounded-md"
+                                                    preload="metadata"
+                                                />
+                                                <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 rounded-md">
+                                                    <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                                                        <path d="M8 5v14l11-7z" />
+                                                    </svg>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* File Info for Audio/Document without preview */}
+                                        {(fileType === 'audio' || fileType === 'document') && (
+                                            <div className="flex items-center justify-center mb-2">
+                                                <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${fileType === 'audio' ? 'bg-blue-100' : 'bg-gray-100'
+                                                    }`}>
+                                                    {fileType === 'audio' && (
+                                                        <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path>
+                                                        </svg>
+                                                    )}
+                                                    {fileType === 'document' && (
+                                                        <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                                        </svg>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* File Details */}
+                                        <div className="text-center">
+                                            <h6 className="text-xs font-medium text-gray-900 truncate mb-1">
+                                                {fileName}
+                                            </h6>
+                                            <div className="text-xs text-gray-500">
+                                                <div>{chatFile.senderType === 'EXPERT' ? 'You' : customer.name}</div>
+                                                <div>{new Date(chatFile.timestamp).toLocaleDateString()}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
                     </div>
                 ) : (
                     <div className="text-sm text-center text-gray-500 py-8">
@@ -147,7 +223,7 @@ const CustomerProfile = ({ customer }) => {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                             </svg>
                         </div>
-                        <p>No documents shared yet</p>
+                        <p>No files shared yet</p>
                     </div>
                 )}
             </div>
