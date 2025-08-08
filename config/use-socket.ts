@@ -11,7 +11,7 @@ export const useSocket = () => {
       const token = getCookie("token"); // Get your JWT token
 
       socketRef.current = io(
-        `${process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:7000/chat"}`, // Add /chat namespace
+        `https://expert-customer-backend.onrender.com`, // Add /chat namespace
         {
           withCredentials: true,
           autoConnect: true,
