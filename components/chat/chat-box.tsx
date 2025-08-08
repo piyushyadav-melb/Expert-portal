@@ -3,6 +3,7 @@ import { Send, Search, X, ChevronLeft, ChevronRight, Paperclip } from 'lucide-re
 import { useSocket } from "@/config/use-socket";
 import { getChatHistory, sendMessage, uploadFile, type Message, type FileUploadResponse } from "@/service/chat.service";
 import { getTimeFromTimestamp, to12HourFormat, getFileTypeFromMimeType, formatFileSize } from "@/utils/helper";
+import { fetchProfile } from "@/service/profile.service";
 
 const CURRENT_USER_ID = "CURRENT_USER_ID"; // Replace with actual expert user ID from auth
 
@@ -22,9 +23,22 @@ const ChatBox = ({ roomId, customer }) => {
     const [imagePreview, setImagePreview] = useState("");
     const [isUploadingFile, setIsUploadingFile] = useState(false);
     const [uploadError, setUploadError] = useState("");
+    const [profileImage, setProfileImage] = useState("");
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const attachmentDropdownRef = useRef<HTMLDivElement>(null);
+
     const socket = useSocket();
+
+    const fetchProfileData = async () => {
+        const response: any = await fetchProfile();
+        if (response.data.profile_picture_url) {
+            setProfileImage(response.data.profile_picture_url);
+        }
+    };
+
+    useEffect(() => {
+        fetchProfileData();
+    }, []);
 
     const getInitials = (name) => {
         if (!name) return "U";
@@ -43,8 +57,12 @@ const ChatBox = ({ roomId, customer }) => {
     // Initialize chat and join room
     useEffect(() => {
         const initializeChat = async () => {
-            if (!roomId || !customer) return;
+            if (!roomId || !customer) {
+                setIsLoading(false);
+                return;
+            }
             try {
+                setIsLoading(true);
                 const response = await getChatHistory(roomId);
                 if (response?.length > 0) setMessages(response);
 
@@ -56,7 +74,8 @@ const ChatBox = ({ roomId, customer }) => {
                     });
                 }
             } catch (error) {
-                // Handle error (optional)
+                console.log("error in initialize chat", error);
+                setIsLoading(false);
             } finally {
                 setIsLoading(false);
             }
@@ -330,7 +349,6 @@ const ChatBox = ({ roomId, customer }) => {
                             <div className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce"></div>
                             <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce delay-100"></div>
                             <div className="w-2 h-2 bg-pink-500 rounded-full animate-bounce delay-200"></div>
-                            <span className="ml-2 text-gray-600 font-medium">Loading...</span>
                         </div>
                     </div>
                 ) : (
@@ -426,9 +444,17 @@ const ChatBox = ({ roomId, customer }) => {
                                 {/* Profile Picture on Right Side for sent messages */}
                                 {message.senderType === "EXPERT" && (
                                     <div className="relative w-8 h-8 mt-1">
-                                        <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-semibold">
-                                            E
-                                        </div>
+                                        {hasValidProfilePicture(profileImage) ? (
+                                            <img
+                                                src={profileImage}
+                                                alt="Expert"
+                                                className="rounded-full w-8 h-8 object-cover"
+                                            />
+                                        ) : (
+                                            <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-semibold">
+                                                {getInitials(customer.name)}
+                                            </div>
+                                        )}
                                     </div>
                                 )}
                             </div>
