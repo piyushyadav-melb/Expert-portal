@@ -87,7 +87,7 @@ export default function UnavailableDates() {
   return (
     <Card className="h-full">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-        <CardTitle className="text-xl font-bold">Unavailable Dates</CardTitle>
+        <CardTitle className="text-lg font-bold">Unavailable Dates</CardTitle>
         <Dialog open={isEditMode} onOpenChange={setIsEditMode}>
           <DialogTrigger asChild>
             <Button variant="outline" onClick={() => setIsEditMode(true)}>

@@ -250,7 +250,7 @@ export default function Schedule() {
         Overlapping time slots are not allowed.
       </p>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7 gap-3">
         <AnimatePresence>
           {daysOfWeek.map((day, index) => (
             <motion.div
@@ -265,7 +265,7 @@ export default function Schedule() {
               <Card className="h-full">
                 <CardHeader className="py-3 px-4">
                   <div className="flex flex-col space-y-3">
-                    <div className="flex items-center space-x-3">
+                    <div className="flex items-center justify-center space-x-3">
                       <Checkbox
                         id={`${day}-toggle`}
                         checked={schedule[day].isAvailable}
