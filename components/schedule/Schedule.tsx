@@ -240,152 +240,162 @@ export default function Schedule() {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
       transition={{ duration: 0.3 }}
-      className="container mx-auto p-6 max-w-3xl"
+      className="container mx-auto p-6 max-w-7xl"
     >
       <h1 className="text-3xl font-bold mb-6 text-center">
         Set Your Availability
       </h1>
-      <p className="text-center mb-4">
+      <p className="text-center mb-6">
         Define your weekly schedule by selecting available days and time slots.
         Overlapping time slots are not allowed.
       </p>
 
-      <AnimatePresence>
-        {daysOfWeek.map((day, index) => (
-          <motion.div
-            key={day}
-            variants={cardVariants}
-            initial="hidden"
-            animate="visible"
-            exit="hidden"
-            transition={{ duration: 0.3, delay: index * 0.1 }}
-          >
-            <Card className="mb-6">
-              <CardHeader className=" py-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <Checkbox
-                      id={`${day}-toggle`}
-                      checked={schedule[day].isAvailable}
-                      onCheckedChange={() => handleDayToggle(day)}
-                      className="h-5 w-5"
-                    />
-                    <label
-                      htmlFor={`${day}-toggle`}
-                      className="text-lg font-medium"
-                    >
-                      {day}
-                    </label>
-                  </div>
-                  {schedule[day].isAvailable && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleAddTimeSlot(day)}
-                      className="flex items-center"
-                    >
-                      <Plus className="mr-1 h-4 w-4" /> Add Slot
-                    </Button>
-                  )}
-                </div>
-              </CardHeader>
-              {schedule[day].isAvailable && (
-                <CardContent>
-                  <AnimatePresence>
-                    {schedule[day].slots.map((slot: any, index: number) => (
-                      <motion.div
-                        key={index}
-                        variants={slotVariants}
-                        initial="hidden"
-                        animate="visible"
-                        exit="hidden"
-                        transition={{ duration: 0.2 }}
-                        className="flex items-center  bg-gray-50 p-3 rounded-lg"
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <AnimatePresence>
+          {daysOfWeek.map((day, index) => (
+            <motion.div
+              key={day}
+              variants={cardVariants}
+              initial="hidden"
+              animate="visible"
+              exit="hidden"
+              transition={{ duration: 0.3, delay: index * 0.05 }}
+              className="h-fit"
+            >
+              <Card className="h-full">
+                <CardHeader className="py-3 px-4">
+                  <div className="flex flex-col space-y-3">
+                    <div className="flex items-center space-x-3">
+                      <Checkbox
+                        id={`${day}-toggle`}
+                        checked={schedule[day].isAvailable}
+                        onCheckedChange={() => handleDayToggle(day)}
+                        className="h-4 w-4"
+                      />
+                      <label
+                        htmlFor={`${day}-toggle`}
+                        className="text-sm font-medium cursor-pointer"
                       >
-                        <Clock className="mr-2 h-5 w-5 text-gray-500" />
-                        <Select
-                          value={slot.start}
-                          onValueChange={(value) =>
-                            handleTimeChange(day, index, "start", value)
-                          }
+                        {day}
+                      </label>
+                    </div>
+                    {schedule[day].isAvailable && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleAddTimeSlot(day)}
+                        className="flex items-center text-xs h-8"
+                      >
+                        <Plus className="mr-1 h-3 w-3" /> Add Slot
+                      </Button>
+                    )}
+                  </div>
+                </CardHeader>
+                {schedule[day].isAvailable && (
+                  <CardContent className="px-4 pb-4">
+                    <AnimatePresence>
+                      {schedule[day].slots.map((slot: any, index: number) => (
+                        <motion.div
+                          key={index}
+                          variants={slotVariants}
+                          initial="hidden"
+                          animate="visible"
+                          exit="hidden"
+                          transition={{ duration: 0.2 }}
+                          className="mb-3 last:mb-0"
                         >
-                          <SelectTrigger className="w-[140px] mr-2">
-                            <SelectValue placeholder="Start Time" />
-                          </SelectTrigger>
-                          <SelectContent className="max-h-[200px]">
-                            {timeSlots.map((time) => (
-                              <SelectItem
-                                key={time}
-                                value={time}
-                                disabled={schedule[day].slots.some(
-                                  (s: any, i: number) =>
-                                    i !== index &&
-                                    to24HourFormat(time) >=
-                                      to24HourFormat(s.start) &&
-                                    to24HourFormat(time) < to24HourFormat(s.end)
-                                )}
+                          <div className="bg-gray-50 p-3 rounded-lg space-y-2">
+                            <div className="flex items-center">
+                              <Clock className="mr-2 h-4 w-4 text-gray-500" />
+                              <span className="text-xs text-gray-600">Slot {index + 1}</span>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleRemoveTimeSlot(day, index)}
+                                className="ml-auto h-6 w-6"
                               >
-                                {time}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <span className="mx-2">-</span>
-                        <Select
-                          value={slot.end}
-                          onValueChange={(value) =>
-                            handleTimeChange(day, index, "end", value)
-                          }
-                        >
-                          <SelectTrigger className="w-[140px] mr-2">
-                            <SelectValue placeholder="End Time" />
-                          </SelectTrigger>
-                          <SelectContent className="max-h-[200px]">
-                            {slot.start ? (
-                              getValidEndTimes(slot.start).map((time) => (
-                                <SelectItem
-                                  key={time}
-                                  value={time}
-                                  disabled={
-                                    to24HourFormat(time) <=
-                                      to24HourFormat(slot.start) ||
-                                    schedule[day].slots.some(
-                                      (s: any, i: number) =>
-                                        i !== index &&
-                                        to24HourFormat(time) >
+                                <X className="h-3 w-3" />
+                              </Button>
+                            </div>
+                            <div className="space-y-2">
+                              <Select
+                                value={slot.start}
+                                onValueChange={(value) =>
+                                  handleTimeChange(day, index, "start", value)
+                                }
+                              >
+                                <SelectTrigger className="w-full h-8 text-xs">
+                                  <SelectValue placeholder="Start Time" />
+                                </SelectTrigger>
+                                <SelectContent className="max-h-[200px]">
+                                  {timeSlots.map((time) => (
+                                    <SelectItem
+                                      key={time}
+                                      value={time}
+                                      disabled={schedule[day].slots.some(
+                                        (s: any, i: number) =>
+                                          i !== index &&
+                                          to24HourFormat(time) >=
                                           to24HourFormat(s.start) &&
-                                        to24HourFormat(time) <=
-                                          to24HourFormat(s.end)
-                                    )
-                                  }
-                                >
-                                  {time}
-                                </SelectItem>
-                              ))
-                            ) : (
-                              <SelectItem value="" disabled>
-                                Select start time first
-                              </SelectItem>
-                            )}
-                          </SelectContent>
-                        </Select>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleRemoveTimeSlot(day, index)}
-                          className="ml-auto"
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </motion.div>
-                    ))}
-                  </AnimatePresence>
-                </CardContent>
-              )}
-            </Card>
-          </motion.div>
-        ))}
-      </AnimatePresence>
+                                          to24HourFormat(time) < to24HourFormat(s.end)
+                                      )}
+                                    >
+                                      {time}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <div className="text-center text-xs text-gray-500">to</div>
+                              <Select
+                                value={slot.end}
+                                onValueChange={(value) =>
+                                  handleTimeChange(day, index, "end", value)
+                                }
+                              >
+                                <SelectTrigger className="w-full h-8 text-xs">
+                                  <SelectValue placeholder="End Time" />
+                                </SelectTrigger>
+                                <SelectContent className="max-h-[200px]">
+                                  {slot.start ? (
+                                    getValidEndTimes(slot.start).map((time) => (
+                                      <SelectItem
+                                        key={time}
+                                        value={time}
+                                        disabled={
+                                          to24HourFormat(time) <=
+                                          to24HourFormat(slot.start) ||
+                                          schedule[day].slots.some(
+                                            (s: any, i: number) =>
+                                              i !== index &&
+                                              to24HourFormat(time) >
+                                              to24HourFormat(s.start) &&
+                                              to24HourFormat(time) <=
+                                              to24HourFormat(s.end)
+                                          )
+                                        }
+                                      >
+                                        {time}
+                                      </SelectItem>
+                                    ))
+                                  ) : (
+                                    <SelectItem value="" disabled>
+                                      Select start time first
+                                    </SelectItem>
+                                  )}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </AnimatePresence>
+                  </CardContent>
+                )}
+              </Card>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </div>
 
       <div className="mt-8 flex justify-end">
         <Button
