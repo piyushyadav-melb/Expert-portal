@@ -4,6 +4,8 @@ import ChatBox from "./chat-box";
 import CustomerProfile from "./customer-profile";
 import { createOrGetChatRoom, getChatHistory, getChattedCustomers } from "@/service/chat.service";
 import { useSocket } from "@/config/use-socket";
+import { fetchProfile } from "@/service/profile.service";
+import { useAppSelector } from "@/hooks";
 
 const Chat: React.FC = () => {
     const [customers, setCustomers] = useState([]);
@@ -12,6 +14,7 @@ const Chat: React.FC = () => {
     const [messages, setMessages] = useState([]);
     const [customer, setCustomer] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [expertId, setExpertId] = useState(null);
     const socket = useSocket();
 
     useEffect(() => {
@@ -19,6 +22,12 @@ const Chat: React.FC = () => {
         setIsLoading(true);
         getChattedCustomers().then(setCustomers).finally(() => setIsLoading(false));
         // getChatRooms().then(setChatRooms);
+        const loadProfile = async () => {
+            const response: any = await fetchProfile();
+            setExpertId(response.data.id);
+        };
+        loadProfile();
+
     }, []);
 
     // Listen for global user status changes
@@ -70,6 +79,31 @@ const Chat: React.FC = () => {
         getChatHistory(room.id).then(setMessages);
     };
 
+    const handleChatDeleted = (deletedCustomerId: string) => {
+
+        // This prevents any race conditions
+        if (customer?.id === deletedCustomerId) {
+            setSelectedRoom(null);
+            setCustomer(null);
+            setMessages([]);
+            console.log("Cleared selected chat for deleted customer");
+        }
+
+        // Remove the customer from the customers list
+        setCustomers(prevCustomers => {
+            const updatedCustomers = prevCustomers.filter(customer => customer.id !== deletedCustomerId);
+            console.log("Updated customers list, removed:", deletedCustomerId);
+            return updatedCustomers;
+        });
+
+        // Remove the chat room from the chat rooms list
+        setChatRooms(prevRooms => {
+            const updatedRooms = prevRooms.filter(room => room.customerId !== deletedCustomerId);
+            console.log("Updated chat rooms list, removed room for customer:", deletedCustomerId);
+            return updatedRooms;
+        });
+    };
+
     return (
         isLoading ? (
             <div className="flex justify-center items-center min-h-[calc(90vh-100px)]">
@@ -88,6 +122,9 @@ const Chat: React.FC = () => {
                             customers={customers}
                             selectedRoom={selectedRoom}
                             onSelectCustomer={handleSelectCustomer}
+                            onChatDeleted={handleChatDeleted}
+                            expertId={expertId}
+
                         />
                     </div>
 

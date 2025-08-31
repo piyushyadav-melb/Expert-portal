@@ -43,9 +43,9 @@ export const getChatRooms = async () => {
   return response.data.data;
 };
 
-export const getChatHistory = async (roomId: string, page = 1, limit = 200) => {
+export const getChatHistory = async (roomId: string, page = 1, limit = 200, searchText = "") => {
   const response = await privateClient.get(`/chat/room/${roomId}/expert/messages`, {
-    params: { page, limit },
+    params: { page, limit, searchText },
   });
   return response.data.data;
 };
@@ -120,4 +120,9 @@ export interface ChatRoomFile {
 export const getChatRoomFiles = async (chatRoomId: string): Promise<ChatRoomFile[]> => {
   const response = await privateClient.get(`/chat/room/${chatRoomId}`);
   return response.data.data;
+};
+
+export const deleteChat = async (expertId: string, customerId: string) => {
+  const response = await privateClient.delete(`/chat/experts/${expertId}/${customerId}`);
+  return response.data;
 };
