@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Check, Copy, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   fetchProfile,
@@ -30,8 +30,8 @@ type FormValues = z.infer<typeof formSchema>;
 
 export function UpdateProfile() {
   const [isLoading, setIsLoading] = useState(false);
-  const [initialData, setInitialData] = useState<FormValues | null>(null);
-
+  const [initialData, setInitialData] = useState<FormValues | null | any>(null);
+  const [isCopied, setIsCopied] = useState(false);
   const {
     register,
     handleSubmit,
@@ -82,10 +82,59 @@ export function UpdateProfile() {
       setIsLoading(false);
     }
   };
+  const handleShareClick = async () => {
+    try {
+      // Construct the public expert detail URL
+      const baseUrl = "https://www.mindnamo.com"; // Gets http://localhost:3000
+      const expertPublicUrl = `${baseUrl}/expert-detail-public/${initialData?.id}`;
 
+      // Check if the Web Share API is supported
+      if (navigator.share) {
+        await navigator.share({
+          title: `${initialData?.name} - Expert Profile`,
+          text: `Check out ${initialData?.name}'s profile`,
+          url: expertPublicUrl,
+        });
+      } else {
+        // Fallback to clipboard API
+        await navigator.clipboard.writeText(expertPublicUrl);
+        setIsCopied(true);
+        toast.success("Link copied to clipboard!");
+
+        // Reset the copied state after 2 seconds
+        setTimeout(() => {
+          setIsCopied(false);
+        }, 2000);
+      }
+    } catch (error) {
+      console.error("Error sharing:", error);
+      toast.error("Failed to share profile link");
+    }
+  };
   return (
     <div className="max-w-2xl mx-auto">
       <div className="bg-card rounded-lg shadow-lg dark:shadow-white/10 p-6">
+        <div>
+          <Button
+            size="lg"
+            className="w-full"
+            onClick={handleShareClick}
+            disabled={isCopied}
+          >
+            {isCopied ? (
+              <>
+                <Check className="w-4 h-4 mr-2" />
+                Copied!
+              </>
+            ) : (
+              <>
+                <Copy className="w-4 h-4 mr-2" />
+                Share Profile
+              </>
+            )}
+          </Button>
+
+        </div>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
