@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useRef, useEffect } from "react";
-import { Bell, X, Check, CheckCheck } from "lucide-react";
+import { Bell, X, Check, CheckCheck, Trash2 } from "lucide-react";
 import { useAppSelector, useAppDispatch } from "@/hooks";
 import {
     markAsRead,
@@ -24,6 +24,49 @@ const NotificationBell: React.FC<NotificationBellProps> = ({ className }) => {
     const dropdownRef = useRef<HTMLDivElement>(null);
     const dispatch = useAppDispatch();
     const { notifications, unreadCount } = useAppSelector((state) => state.notification);
+
+    // Get current user ID for filtering
+    const getCurrentUserId = () => {
+        try {
+            const token = document.cookie
+                .split('; ')
+                .find(row => row.startsWith('token='))
+                ?.split('=')[1];
+
+            if (!token) return null;
+
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            return payload.userId || payload.sub || null;
+        } catch (error) {
+            console.error("Error extracting user ID:", error);
+            return null;
+        }
+    };
+
+    // Filter notifications for current user only
+    const currentUserId = getCurrentUserId();
+    const filteredNotifications = notifications.filter(notification => {
+        // For message notifications, check recipientId
+        if (notification.type === 'MESSAGE' && notification.data?.recipientId) {
+            const isForCurrentUser = notification.data.recipientId === currentUserId;
+            if (!isForCurrentUser) {
+            }
+            return isForCurrentUser;
+        }
+        // For other notifications, check userId in data
+        if (notification.data?.userId) {
+            const isForCurrentUser = notification.data.userId === currentUserId;
+            if (!isForCurrentUser) {
+            }
+            return isForCurrentUser;
+        }
+        return true;
+    });
+
+    // Calculate unread count for filtered notifications
+    const filteredUnreadCount = filteredNotifications.filter(n => !n.read).length;
+
+    // Debug logging
 
     // Close dropdown when clicking outside
     useEffect(() => {
@@ -108,12 +151,12 @@ const NotificationBell: React.FC<NotificationBellProps> = ({ className }) => {
                 className="relative"
             >
                 <Bell className="h-5 w-5" />
-                {unreadCount > 0 && (
+                {filteredUnreadCount > 0 && (
                     <Badge
                         variant="soft"
                         className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
                     >
-                        {unreadCount > 99 ? '99+' : unreadCount}
+                        {filteredUnreadCount > 99 ? '99+' : filteredUnreadCount}
                     </Badge>
                 )}
             </Button>
@@ -126,9 +169,9 @@ const NotificationBell: React.FC<NotificationBellProps> = ({ className }) => {
                                 Notifications
                             </h3>
                             <div className="flex items-center space-x-2">
-                                {unreadCount > 0 && (
+                                {filteredUnreadCount > 0 && (
                                     <Button
-                                        variant="ghost"
+                                        variant="soft"
                                         size="sm"
                                         onClick={handleMarkAllAsRead}
                                         className="text-xs"
@@ -137,14 +180,15 @@ const NotificationBell: React.FC<NotificationBellProps> = ({ className }) => {
                                         Mark all read
                                     </Button>
                                 )}
-                                {notifications.length > 0 && (
+                                {filteredNotifications.length > 0 && (
                                     <Button
-                                        variant="ghost"
+                                        variant="soft"
                                         size="sm"
                                         onClick={handleClearAll}
-                                        className="text-xs text-red-600 hover:text-red-700"
+                                        className="text-xs text-red-400 hover:text-red-500"
                                     >
-                                        Clear all
+                                        <Trash2 className="h-3 w-3 mr-1" />
+
                                     </Button>
                                 )}
                             </div>
@@ -152,14 +196,14 @@ const NotificationBell: React.FC<NotificationBellProps> = ({ className }) => {
                     </div>
 
                     <ScrollArea className="max-h-96">
-                        {notifications.length === 0 ? (
+                        {filteredNotifications.length === 0 ? (
                             <div className="p-8 text-center text-gray-500 dark:text-gray-400">
                                 <Bell className="h-12 w-12 mx-auto mb-4 opacity-50" />
                                 <p>No notifications yet</p>
                             </div>
                         ) : (
                             <div className="divide-y divide-gray-200 dark:divide-gray-700">
-                                {notifications.map((notification) => (
+                                {filteredNotifications.map((notification) => (
                                     <div
                                         key={notification.id}
                                         className={cn(

@@ -53,31 +53,55 @@ const NotificationManager: React.FC<NotificationManagerProps> = ({
     }, []);
 
     // Handle new notifications from Redux store
-    useEffect(() => {
-        const unreadNotifications = notifications.filter(
-            (notification) => !notification.read && !processedNotifications.has(notification.id)
-        );
+    // useEffect(() => {
+    //     const unreadNotifications = notifications.filter(
+    //         (notification) => !notification.read && !processedNotifications.has(notification.id)
+    //     );
 
-        if (unreadNotifications.length > 0) {
-            const latestNotification = unreadNotifications[0];
+    //     if (unreadNotifications.length > 0) {
+    //         const latestNotification = unreadNotifications[0];
 
-            // Play notification sound
-            if ((window as any).playNotificationSound) {
-                (window as any).playNotificationSound();
-            }
+    //         // Play notification sound
+    //         if ((window as any).playNotificationSound) {
+    //             (window as any).playNotificationSound();
+    //         }
 
-            // Add to active popups if we haven't reached the limit
-            if (activePopups.length < maxPopups) {
-                setActivePopups(prev => [...prev, latestNotification]);
-                setProcessedNotifications(prev => new Set([...prev, latestNotification.id]));
-            }
-        }
-    }, [notifications, processedNotifications, activePopups.length, maxPopups]);
+    //         // Add to active popups if we haven't reached the limit
+    //         if (activePopups.length < maxPopups) {
+    //             setActivePopups(prev => [...prev, latestNotification]);
+    //             setProcessedNotifications(prev => new Set([...prev, latestNotification.id]));
+    //         }
+    //     }
+    // }, [notifications, processedNotifications, activePopups.length, maxPopups]);
 
     // Handle popup events from notification service
     useEffect(() => {
         const handlePopupEvent = (event: CustomEvent) => {
             const notification = event.detail;
+
+            // Get current user ID for filtering
+            const getCurrentUserId = () => {
+                try {
+                    const token = document.cookie
+                        .split('; ')
+                        .find(row => row.startsWith('token='))
+                        ?.split('=')[1];
+
+                    if (!token) return null;
+
+                    const payload = JSON.parse(atob(token.split('.')[1]));
+                    return payload.userId || payload.sub || null;
+                } catch (error) {
+                    console.error("Error extracting user ID:", error);
+                    return null;
+                }
+            };
+
+            const currentUserId = getCurrentUserId();
+            // Only show popup if notification is for current user
+            if (notification.data?.recipientId && notification.data.recipientId !== currentUserId) {
+                return;
+            }
 
             // Play notification sound
             if ((window as any).playNotificationSound) {

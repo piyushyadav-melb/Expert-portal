@@ -1,5 +1,6 @@
 import { store } from "@/redux/store";
 import { addNotification, setConnectionStatus } from "@/redux/slice/notification.slice";
+import { getCookie } from "@/utils/cookie";
 
 export interface MessageNotificationPayload {
     type: 'NEW_MESSAGE';
@@ -68,9 +69,9 @@ class NotificationService {
         });
 
         // Handle message notifications
-        this.socket.on('messageNotification', (payload: MessageNotificationPayload) => {
-            this.handleMessageNotification(payload);
-        });
+        // this.socket.on('messageNotification', (payload: MessageNotificationPayload) => {
+        //     this.handleMessageNotification(payload);
+        // });
 
         // Handle general notifications
         this.socket.on('notification', (payload: GeneralNotificationPayload) => {
@@ -89,6 +90,14 @@ class NotificationService {
     }
 
     private handleMessageNotification(payload: MessageNotificationPayload) {
+        // Get current user ID from token or auth context
+        const currentUserId = this.getCurrentUserId();
+
+        // Only show notification if it's for the current user
+        if (payload.recipientId !== currentUserId) {
+            return;
+        }
+
         const notification = {
             id: `msg_${payload.messageId}_${Date.now()}`,
             type: 'MESSAGE' as const,
@@ -105,6 +114,7 @@ class NotificationService {
                 senderProfilePicture: payload.sender.profilePicture,
                 hasFile: payload.message.hasFile,
                 fileType: payload.message.fileType,
+                recipientId: payload.recipientId, // Add recipientId for filtering
             },
             timestamp: payload.message.timestamp,
             read: false,
@@ -120,12 +130,23 @@ class NotificationService {
     }
 
     private handleGeneralNotification(payload: GeneralNotificationPayload) {
+        // Get current user ID from token or auth context
+        const currentUserId = this.getCurrentUserId();
+
+        // Only show notification if it's for the current user
+        if (payload.userId !== currentUserId) {
+            return;
+        }
+
         const notification = {
             id: `general_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
             type: payload.type,
             title: payload.title,
             body: payload.body,
-            data: payload.data,
+            data: {
+                ...payload.data,
+                userId: payload.userId, // Add userId for filtering
+            },
             timestamp: payload.timestamp,
             read: false,
         };
@@ -136,12 +157,24 @@ class NotificationService {
     }
 
     private handleBookingNotification(payload: any) {
+        // Get current user ID from token or auth context
+        const currentUserId = this.getCurrentUserId();
+
+        // Only show notification if it's for the current user
+        if (payload.userId && payload.userId !== currentUserId) {
+            console.log(`Booking notification not for current user. Expected: ${currentUserId}, Got: ${payload.userId}`);
+            return;
+        }
+
         const notification = {
             id: `booking_${payload.bookingId || Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
             type: 'BOOKING' as const,
             title: payload.title || 'New Booking',
             body: payload.body || 'You have a new booking',
-            data: payload.data || payload,
+            data: {
+                ...(payload.data || payload),
+                userId: payload.userId, // Add userId for filtering
+            },
             timestamp: payload.timestamp || new Date().toISOString(),
             read: false,
         };
@@ -152,19 +185,30 @@ class NotificationService {
     }
 
     private handleMeetingNotification(payload: any) {
+        // Get current user ID from token or auth context
+        const currentUserId = this.getCurrentUserId();
+
+        // Only show notification if it's for the current user
+        if (payload.userId && payload.userId !== currentUserId) {
+            console.log(`Meeting notification not for current user. Expected: ${currentUserId}, Got: ${payload.userId}`);
+            return;
+        }
+
         const notification = {
             id: `meeting_${payload.meetingId || Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
             type: 'MEETING' as const,
             title: payload.title || 'Meeting Update',
             body: payload.body || 'You have a meeting update',
-            data: payload.data || payload,
+            data: {
+                ...(payload.data || payload),
+                userId: payload.userId, // Add userId for filtering
+            },
             timestamp: payload.timestamp || new Date().toISOString(),
             read: false,
         };
 
         store.dispatch(addNotification(notification));
         this.showBrowserNotification(notification);
-        this.triggerPopupNotification(notification);
         this.triggerPopupNotification(notification);
     }
 
@@ -226,6 +270,23 @@ class NotificationService {
             return Notification.requestPermission();
         }
         return Promise.resolve(Notification.permission);
+    }
+
+    private getCurrentUserId(): string | null {
+        try {
+            const token = getCookie("token");
+            if (!token) {
+                console.log("No token found for user ID extraction");
+                return null;
+            }
+
+            // Decode JWT token to get user ID
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            return payload.userId || payload.sub || null;
+        } catch (error) {
+            console.error("Error extracting user ID from token:", error);
+            return null;
+        }
     }
 
     public cleanup() {

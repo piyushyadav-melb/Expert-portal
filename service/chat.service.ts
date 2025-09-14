@@ -45,7 +45,7 @@ export const getChatRooms = async () => {
 
 export const getChatHistory = async (roomId: string, page = 1, limit = 200, searchText = "") => {
   const response = await privateClient.get(`/chat/room/${roomId}/expert/messages`, {
-    params: { page, limit, searchText },
+    params: { page, limit: 1000, searchText },
   });
   return response.data.data;
 };

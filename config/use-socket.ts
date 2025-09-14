@@ -11,7 +11,7 @@ export const useSocket = () => {
       const token = getCookie("token"); // Get your JWT token
 
       socketRef.current = io(
-        `http://localhost:7000`, // Add /chat namespace
+        `https://expert-customer-backend.onrender.com`, // Add /chat namespace
         {
           withCredentials: true,
           autoConnect: true,
@@ -43,9 +43,9 @@ export const useSocket = () => {
       });
 
       // Handle notification events
-      socketRef.current.on("messageNotification", (data) => {
-        console.log("Message notification received:", data);
-      });
+      // socketRef.current.on("messageNotification", (data) => {
+      //   console.log("Message notification received:", data);
+      // });
 
       socketRef.current.on("notification", (data) => {
         console.log("General notification received:", data);

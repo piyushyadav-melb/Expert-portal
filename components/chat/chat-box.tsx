@@ -24,6 +24,7 @@ const ChatBox = ({ roomId, customer }) => {
     const [isUploadingFile, setIsUploadingFile] = useState(false);
     const [uploadError, setUploadError] = useState("");
     const [profileImage, setProfileImage] = useState("");
+    const [profile, setProfile] = useState<any>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const attachmentDropdownRef = useRef<HTMLDivElement>(null);
 
@@ -33,6 +34,7 @@ const ChatBox = ({ roomId, customer }) => {
         const response: any = await fetchProfile();
         if (response.data.profile_picture_url) {
             setProfileImage(response.data.profile_picture_url);
+            setProfile(response.data);
         }
     };
 
@@ -67,10 +69,9 @@ const ChatBox = ({ roomId, customer }) => {
                 if (response?.length > 0) setMessages(response);
 
                 if (socket) {
-                    console.log("inside initialize chat")
                     await socket.emitWithAck?.("joinChat", {
                         chatRoomId: roomId,
-                        userId: CURRENT_USER_ID
+                        userId: profile?.id
                     });
                 }
             } catch (error) {
@@ -119,7 +120,7 @@ const ChatBox = ({ roomId, customer }) => {
 
             socket.emit("joinChat", {
                 chatRoomId: roomId,
-                userId: CURRENT_USER_ID
+                userId: profile?.id
             });
         }
     }, [socket, roomId, customer?.id]);
@@ -133,7 +134,6 @@ const ChatBox = ({ roomId, customer }) => {
 
         return () => {
             if (socket && roomId) {
-                console.log("LEAVING CHAT EXPERT");
                 socket.emit("leaveChat", { chatRoomId: roomId });
             }
         };
@@ -167,7 +167,7 @@ const ChatBox = ({ roomId, customer }) => {
             if (socket) {
                 const messageData: any = {
                     chatRoomId: roomId,
-                    senderId: CURRENT_USER_ID,
+                    senderId: profile?.id,
                     senderType: "EXPERT",
                     content: input,
                 };
@@ -178,7 +178,6 @@ const ChatBox = ({ roomId, customer }) => {
                     messageData.fileName = uploadedFileData.fileName;
                 }
 
-                console.log("Sending message data:", messageData);
                 const message = await socket.emitWithAck?.("sendMessage", messageData);
                 if (message) {
                     setInput("");
@@ -199,7 +198,7 @@ const ChatBox = ({ roomId, customer }) => {
             socket.emit("typing", {
                 chatRoomId: roomId,
                 isTyping,
-                userId: CURRENT_USER_ID,
+                userId: profile?.id,
             });
         }
     };
@@ -211,7 +210,7 @@ const ChatBox = ({ roomId, customer }) => {
 
             try {
                 // Server-side search
-                const response = await getChatHistory(roomId, 1, 200, messageSearchTerm.trim());
+                const response = await getChatHistory(roomId, 1, 1000, messageSearchTerm.trim());
                 setSearchResults(response || []);
                 setCurrentSearchIndex(0);
 
@@ -276,7 +275,6 @@ const ChatBox = ({ roomId, customer }) => {
         const file = event.target.files?.[0];
         if (!file) return;
 
-        console.log("File selected:", file.name, file.type, file.size);
         setSelectedFile(file);
         setIsUploadingFile(true);
         setUploadError("");
