@@ -5,7 +5,7 @@ const API_BASE_URL: string = process.env.API_BASE_URL as string;
 
 const publicClient: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 10000,
+  timeout: 100000,
   headers: {
     Accept: "application/json",
     "Content-Type": "application/json",
@@ -27,7 +27,7 @@ publicClient.interceptors.request.use(
 
 const privateClient = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 90000,
+  timeout: 100000,
   headers: {
     "Content-Type": "application/json",
     Accept: "application/json",

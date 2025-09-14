@@ -9,6 +9,7 @@ import HorizontalHeader from "./horizontal-header";
 import Inbox from "./inbox";
 import HorizontalMenu from "./horizontal-menu";
 import NotificationMessage from "./notification-message";
+import { NotificationBell } from "@/components/notifications";
 
 import Language from "./language";
 import { useMediaQuery } from "@/hooks/use-media-query";
@@ -33,6 +34,7 @@ const NavTools = ({
       <ThemeButton />
       {/* <Inbox /> */}
       {/* <NotificationMessage /> */}
+      <NotificationBell />
 
       <div className="ltr:pl-2 rtl:pr-2">
         <ProfileInfo />
