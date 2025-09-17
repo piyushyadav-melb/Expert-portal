@@ -34,6 +34,8 @@ export interface GeneralNotificationPayload {
 class NotificationService {
     private static instance: NotificationService;
     private socket: any = null;
+    private isInitialized: boolean = false;
+    private eventListenersSetup: boolean = false;
 
     private constructor() { }
 
@@ -45,12 +47,32 @@ class NotificationService {
     }
 
     public initializeSocket(socket: any) {
+        console.log('Initializing notification service with socket, connected:', socket?.connected);
+
+        if (this.isInitialized && this.socket === socket) {
+            console.log('Notification service already initialized with this socket');
+            return;
+        }
+
+        // Clean up previous socket if exists
+        if (this.socket && this.socket !== socket) {
+            this.cleanup();
+        }
+
         this.socket = socket;
         this.setupEventListeners();
+        this.isInitialized = true;
+
+        console.log('Notification service initialized successfully');
     }
 
     private setupEventListeners() {
-        if (!this.socket) return;
+        if (!this.socket || this.eventListenersSetup) {
+            console.log('Socket not available or listeners already setup');
+            return;
+        }
+
+        console.log('Setting up event listeners for notification service');
 
         // Handle socket connection status
         this.socket.on('connect', () => {
@@ -70,23 +92,34 @@ class NotificationService {
 
         // Handle message notifications
         // this.socket.on('messageNotification', (payload: MessageNotificationPayload) => {
+        //     console.log('Message notification received:', payload);
         //     this.handleMessageNotification(payload);
         // });
 
         // Handle general notifications
         this.socket.on('notification', (payload: GeneralNotificationPayload) => {
+            console.log('General notification received:', payload);
             this.handleGeneralNotification(payload);
         });
 
         // Handle booking notifications
         this.socket.on('bookingNotification', (payload: any) => {
+            console.log('Booking notification received:', payload);
             this.handleBookingNotification(payload);
         });
 
         // Handle meeting notifications
         this.socket.on('meetingNotification', (payload: any) => {
+            console.log('Meeting notification received:', payload);
             this.handleMeetingNotification(payload);
         });
+
+        this.eventListenersSetup = true;
+
+        // Set initial connection status if socket is already connected
+        if (this.socket.connected) {
+            store.dispatch(setConnectionStatus(true));
+        }
     }
 
     private handleMessageNotification(payload: MessageNotificationPayload) {
@@ -114,7 +147,7 @@ class NotificationService {
                 senderProfilePicture: payload.sender.profilePicture,
                 hasFile: payload.message.hasFile,
                 fileType: payload.message.fileType,
-                recipientId: payload.recipientId, // Add recipientId for filtering
+                recipientId: payload.recipientId,
             },
             timestamp: payload.message.timestamp,
             read: false,
@@ -145,7 +178,7 @@ class NotificationService {
             body: payload.body,
             data: {
                 ...payload.data,
-                userId: payload.userId, // Add userId for filtering
+                userId: payload.userId,
             },
             timestamp: payload.timestamp,
             read: false,
@@ -173,7 +206,7 @@ class NotificationService {
             body: payload.body || 'You have a new booking',
             data: {
                 ...(payload.data || payload),
-                userId: payload.userId, // Add userId for filtering
+                userId: payload.userId,
             },
             timestamp: payload.timestamp || new Date().toISOString(),
             read: false,
@@ -201,7 +234,7 @@ class NotificationService {
             body: payload.body || 'You have a meeting update',
             data: {
                 ...(payload.data || payload),
-                userId: payload.userId, // Add userId for filtering
+                userId: payload.userId,
             },
             timestamp: payload.timestamp || new Date().toISOString(),
             read: false,
@@ -291,6 +324,7 @@ class NotificationService {
 
     public cleanup() {
         if (this.socket) {
+            console.log('Cleaning up notification service event listeners');
             this.socket.off('messageNotification');
             this.socket.off('notification');
             this.socket.off('bookingNotification');
@@ -298,7 +332,14 @@ class NotificationService {
             this.socket.off('connect');
             this.socket.off('disconnect');
             this.socket.off('connect_error');
+            this.eventListenersSetup = false;
         }
+        this.isInitialized = false;
+    }
+
+    // Add method to check if service is properly initialized
+    public isServiceReady(): boolean {
+        return this.isInitialized && this.socket && this.socket.connected;
     }
 }
 

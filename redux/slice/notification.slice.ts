@@ -90,6 +90,32 @@ const notificationSlice = createSlice({
                 }
             }
         },
+
+        // Handle general notification
+        handleGeneralNotification: (state, action: PayloadAction<any>) => {
+            const data = action.payload;
+            const newNotification: Notification = {
+                id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+                type: data.type || 'SYSTEM',
+                title: data.title || 'New Notification',
+                body: data.body || 'You have a new notification',
+                timestamp: new Date().toISOString(),
+                read: false,
+                data: data.data,
+            };
+
+            state.notifications.unshift(newNotification);
+            state.unreadCount += 1;
+            // state.lastNotificationTime = newNotification.timestamp;
+
+            // Keep only last 50 notifications
+            if (state.notifications.length > 50) {
+                const removedNotification = state.notifications.pop();
+                if (removedNotification && !removedNotification.read) {
+                    state.unreadCount = Math.max(0, state.unreadCount - 1);
+                }
+            }
+        },
     },
 });
 
@@ -101,6 +127,7 @@ export const {
     clearAllNotifications,
     setConnectionStatus,
     updateNotification,
+    handleGeneralNotification,
 } = notificationSlice.actions;
 
 export default notificationSlice.reducer;
