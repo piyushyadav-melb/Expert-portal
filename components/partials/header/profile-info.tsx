@@ -22,6 +22,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import avatar5 from "@/public/images/avatar/avatar-5.jpg";
+import { disconnectSocket } from "@/config/use-socket";
 
 const ProfileInfo = () => {
   const navigation = useRouter();
@@ -40,6 +41,7 @@ const ProfileInfo = () => {
     const response: any = logout();
     if (response?.status === true && response?.statusCode === 200) {
       navigation.replace("login");
+      disconnectSocket();
     }
   };
 
