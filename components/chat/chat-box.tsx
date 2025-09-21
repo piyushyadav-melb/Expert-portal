@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Send, Search, X, ChevronLeft, ChevronRight, Paperclip } from 'lucide-react';
+import { Send, Search, X, ChevronLeft, ChevronRight, Paperclip, Square, Mic, Pause, PlayCircle } from 'lucide-react';
 import { useSocket } from "@/config/use-socket";
 import { getChatHistory, sendMessage, uploadFile, type Message, type FileUploadResponse } from "@/service/chat.service";
 import { getTimeFromTimestamp, to12HourFormat, getFileTypeFromMimeType, formatFileSize } from "@/utils/helper";
@@ -28,7 +28,23 @@ const ChatBox = ({ roomId, customer }) => {
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const attachmentDropdownRef = useRef<HTMLDivElement>(null);
 
+    // Add voice recording state
+    const [isRecording, setIsRecording] = useState(false);
+    const [isPlaying, setIsPlaying] = useState(false);
+    const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+    const [audioUrl, setAudioUrl] = useState<string>("");
+    const [recordingDuration, setRecordingDuration] = useState(0);
+    const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+    const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
+    const [recordingTimer, setRecordingTimer] = useState<NodeJS.Timeout | null>(null);
+
+
     const socket = useSocket();
+
+    // Add refs
+    const audioRef = useRef<HTMLAudioElement>(null);
+    const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
 
     const fetchProfileData = async () => {
         const response: any = await fetchProfile();
@@ -327,6 +343,154 @@ const ChatBox = ({ roomId, customer }) => {
     };
 
 
+    const startRecording = async () => {
+        if (isRecording) return; // Prevent multiple recordings
+
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const mediaRecorder = new MediaRecorder(stream);
+            const audioChunks: Blob[] = [];
+
+            mediaRecorder.ondataavailable = (event) => {
+                if (event.data.size > 0) {
+                    audioChunks.push(event.data);
+                }
+            };
+
+            mediaRecorder.onstop = () => {
+                const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                const audioUrl = URL.createObjectURL(audioBlob);
+
+                setAudioBlob(audioBlob);
+                setAudioUrl(audioUrl);
+                setAudioChunks([]);
+
+                // Stop all tracks to release microphone
+                stream.getTracks().forEach(track => track.stop());
+            };
+
+            mediaRecorder.start();
+            setMediaRecorder(mediaRecorder);
+            setIsRecording(true);
+            setRecordingDuration(0);
+            setAudioChunks([]);
+
+            // Start recording timer
+            const interval = setInterval(() => {
+                setRecordingDuration(prev => prev + 1);
+            }, 1000);
+            setRecordingTimer(interval);
+
+        } catch (error) {
+            console.error("Error starting recording:", error);
+            alert("Could not access microphone. Please check permissions.");
+        }
+    };
+
+
+    const stopRecording = () => {
+        if (mediaRecorder && isRecording) {
+            mediaRecorder.stop();
+            setIsRecording(false);
+
+            if (recordingTimer) {
+                clearInterval(recordingTimer);
+                setRecordingTimer(null);
+            }
+        }
+    };
+
+    const playRecording = () => {
+        if (audioUrl && audioRef.current) {
+            if (isPlaying) {
+                audioRef.current.pause();
+                setIsPlaying(false);
+            } else {
+                audioRef.current.play();
+                setIsPlaying(true);
+            }
+        }
+    };
+
+    const deleteRecording = () => {
+        if (audioUrl) {
+            URL.revokeObjectURL(audioUrl);
+        }
+        setAudioBlob(null);
+        setAudioUrl("");
+        setRecordingDuration(0);
+        setIsPlaying(false);
+    };
+
+    const sendVoiceMessage = async () => {
+        if (!audioBlob || !roomId) return;
+
+        try {
+            if (socket) {
+                // Convert blob to file for upload
+                const audioFile = new File([audioBlob], `voice-message-${Date.now()}.wav`, {
+                    type: 'audio/wav'
+                });
+
+                // Upload the audio file first
+                const fileType = getFileTypeFromMimeType(audioFile.type);
+                const uploadedData = await uploadFile(audioFile, fileType);
+
+                if (uploadedData) {
+                    const messageData: any = {
+                        chatRoomId: roomId,
+                        senderId: profile?.id,
+                        senderType: "EXPERT",
+                        content: "🎤 Voice message", // Placeholder text
+                        fileLink: uploadedData.fileUrl,
+                        fileType: uploadedData.fileType,
+                        fileName: uploadedData.fileName,
+                    };
+
+                    const message = await socket.emitWithAck?.("sendMessage", messageData);
+                    if (message) {
+                        // Clear recording data
+                        deleteRecording();
+                        setInput("");
+                        setSelectedFile(null);
+                        setUploadedFileData(null);
+                        setImagePreview("");
+                        setUploadError("");
+                    }
+                }
+            }
+        } catch (error) {
+            console.error("Error sending voice message:", error);
+            setUploadError("Failed to send voice message. Please try again.");
+        }
+    };
+
+    // Add this useEffect for cleanup
+    useEffect(() => {
+        return () => {
+            // Cleanup audio URL when component unmounts
+            if (audioUrl) {
+                URL.revokeObjectURL(audioUrl);
+            }
+            // Clear recording timer
+            if (recordingTimer) {
+                clearInterval(recordingTimer);
+            }
+            if (recordingIntervalRef.current) {
+                clearInterval(recordingIntervalRef.current);
+            }
+        };
+    }, [audioUrl, recordingTimer]);
+
+    // Format recording duration
+    const formatDuration = (seconds: number) => {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins}:${secs.toString().padStart(2, '0')}`;
+    };
+
+
+
     if (!customer) {
         return (
             <div className="flex-1 flex flex-col bg-white border border-gray-200 my-5 sm:my-0 lg:mx-5 lg:mt-6 rounded-xl items-center justify-center">
@@ -516,14 +680,6 @@ const ChatBox = ({ roomId, customer }) => {
                                                     />
                                                 )}
 
-                                                {/* Audio Display */}
-                                                {message.audioLink && (
-                                                    <audio
-                                                        src={message.audioLink}
-                                                        controls
-                                                        className="w-full"
-                                                    />
-                                                )}
 
                                                 {/* Document Display */}
                                                 {message.documentLink && (
@@ -535,6 +691,22 @@ const ChatBox = ({ roomId, customer }) => {
                                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                                                         </svg>
                                                         <span className="text-xs text-white">{message?.fileName || "Document"}</span>
+                                                    </div>
+                                                )}
+
+                                                {/* Audio Display */}
+                                                {(message.audioLink) && (
+                                                    <div className="flex items-center gap-2 bg-blue-50 p-3 rounded-lg">
+                                                        <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                                                            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path>
+                                                            </svg>
+                                                        </div>
+
+                                                        <audio controls className="h-8">
+                                                            <source src={message.audioLink} type="audio/wav" />
+                                                            Your browser does not support the audio element.
+                                                        </audio>
                                                     </div>
                                                 )}
                                             </div>
@@ -721,9 +893,43 @@ const ChatBox = ({ roomId, customer }) => {
                                 ) : null}
                             </div>
                         )}
+                        {/* Voice Recording Display */}
+                        {audioBlob && (
+                            <div className="flex items-center w-full px-4 py-2 bg-green-50 border border-green-200 rounded-lg">
+                                <div className="flex items-center w-full">
+                                    <div className="w-5 h-5 mr-2 bg-green-500 rounded flex items-center justify-center">
+                                        <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path>
+                                        </svg>
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <span className="text-sm font-medium text-green-600 block">
+                                            Voice Message ({formatDuration(recordingDuration)})
+                                        </span>
+                                        <span className="text-xs text-green-500">
+                                            Tap to play
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            onClick={playRecording}
+                                            className="text-green-600 hover:text-green-700 p-1"
+                                        >
+                                            {isPlaying ? <Pause className="w-4 h-4" /> : <PlayCircle className="w-4 h-4" />}
+                                        </button>
+                                        <button
+                                            onClick={deleteRecording}
+                                            className="text-red-500 hover:text-red-700 p-1"
+                                        >
+                                            <X className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
 
                         {/* Message Input */}
-                        {!selectedFile && (
+                        {!selectedFile && !audioBlob && (
                             <div className="overflow-hidden w-full">
                                 <input
                                     type="text"
@@ -744,8 +950,22 @@ const ChatBox = ({ roomId, customer }) => {
                             </div>
                         )}
 
+                        {/* Voice Recording Button */}
+                        {!selectedFile && !audioBlob && (
+                            <button
+                                className={`p-2 rounded-full focus:outline-none transition-colors ${isRecording
+                                    ? "bg-red-500 text-white hover:bg-red-600"
+                                    : "text-gray-500 hover:text-gray-700"
+                                    }`}
+                                onClick={isRecording ? stopRecording : startRecording}
+                                title={isRecording ? "Click to stop recording" : "Click to start recording"}
+                            >
+                                {isRecording ? <Square className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+                            </button>
+                        )}
+
                         {/* Attachment Button */}
-                        {!selectedFile && (
+                        {!selectedFile && !audioBlob && (
                             <button
                                 className="text-gray-500 bg-transparent rounded-full focus:outline-none p-2"
                                 onClick={openAttachmentDropdown}
@@ -757,16 +977,35 @@ const ChatBox = ({ roomId, customer }) => {
 
                     {/* Send Button */}
                     <button
-                        onClick={handleSendMessage}
+                        onClick={audioBlob ? sendVoiceMessage : handleSendMessage}
                         className="ml-3 bg-gray-800 text-white p-3 rounded-full hover:bg-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        disabled={(!input.trim() && !uploadedFileData) || isUploadingFile}
+                        disabled={(!input.trim() && !uploadedFileData && !audioBlob) || isUploadingFile}
                     >
                         <Send className="w-5 h-5" />
                     </button>
                 </div>
 
-                {/* Attachment Dropdown - Positioned Outside */}
-                {attachmentDropdown && (
+                {/* Hidden audio element for playing recordings */}
+                <audio
+                    ref={audioRef}
+                    src={audioUrl}
+                    onEnded={() => setIsPlaying(false)}
+                    onPause={() => setIsPlaying(false)}
+                    onPlay={() => setIsPlaying(true)}
+                />
+
+                {/* Recording indicator */}
+                {isRecording && (
+                    <div className="absolute top-2 right-2 bg-red-500 text-white px-3 py-1 rounded-full text-sm flex items-center gap-2">
+                        <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                        Recording... {formatDuration(recordingDuration)}
+                    </div>
+                )}
+            </div>
+
+            {/* Attachment Dropdown - Positioned Outside */}
+            {
+                attachmentDropdown && (
                     <div
                         ref={attachmentDropdownRef}
                         className="absolute bottom-16 right-16 bg-white shadow-xl border rounded-lg py-2 z-[9999] min-w-[140px]"
@@ -809,9 +1048,9 @@ const ChatBox = ({ roomId, customer }) => {
                             🎵 Audio
                         </label>
                     </div>
-                )}
-            </div>
-        </div>
+                )
+            }
+        </div >
     );
 };
 
