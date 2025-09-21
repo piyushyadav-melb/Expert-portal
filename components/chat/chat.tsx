@@ -6,6 +6,7 @@ import { createOrGetChatRoom, getChatHistory, getChattedCustomers } from "@/serv
 import { useSocket } from "@/config/use-socket";
 import { fetchProfile } from "@/service/profile.service";
 import { useAppSelector } from "@/hooks";
+import { useSearchParams } from "next/navigation";
 
 const Chat: React.FC = () => {
     const [customers, setCustomers] = useState([]);
@@ -16,6 +17,9 @@ const Chat: React.FC = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [expertId, setExpertId] = useState(null);
     const socket = useSocket();
+
+    const searchParams = useSearchParams();
+    const customerId = searchParams.get('customerId');
 
     useEffect(() => {
         // Fetch customers and chat rooms on mount
@@ -29,6 +33,54 @@ const Chat: React.FC = () => {
         loadProfile();
 
     }, []);
+
+    useEffect(() => {
+        // Fetch customers and chat rooms on mount
+        const fetchData = async () => {
+            try {
+                setIsLoading(true);
+                const customersData = await getChattedCustomers();
+                setCustomers(customersData);
+
+                // Load expert profile
+                const response: any = await fetchProfile();
+                setExpertId(response.data.id);
+
+                // Check if there's a customerId in URL params
+                const customerId = searchParams.get('customerId');
+                if (customerId) {
+                    // Find customer in the fetched data
+                    const targetCustomer = customersData.find(customer => customer.id === customerId);
+                    if (targetCustomer) {
+                        // Automatically select this customer
+                        await handleSelectCustomer(targetCustomer);
+                    } else {
+                        // If customer not found in chatted customers, fetch customer data and create chat room
+                        try {
+                            const room = await createOrGetChatRoom(customerId);
+                            setChatRooms(prev => [...prev, room]);
+                            setSelectedRoom(room);
+                            if (room.customer) {
+                                setCustomer(room.customer);
+                                const history = await getChatHistory(room.id);
+                                setMessages(history);
+                            }
+                        } catch (error) {
+                            console.error('Error creating chat room for customer:', customerId, error);
+                            // Could add user notification here if needed
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching customers:', error);
+                setIsLoading(false);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchData();
+    }, [searchParams]);
 
     // Listen for global user status changes
     useEffect(() => {

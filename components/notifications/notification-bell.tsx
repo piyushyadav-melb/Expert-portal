@@ -86,10 +86,11 @@ const NotificationBell: React.FC<NotificationBellProps> = ({ className }) => {
         if (!notification.read) {
             dispatch(markAsRead(notification.id));
         }
-
+        console.log("NOTIFICATION", notification)
         // Navigate based on notification type
-        if (notification.type === 'MESSAGE' && notification.chatRoomId) {
-            window.location.href = `/chat?room=${notification.chatRoomId}`;
+        if (notification.type === 'MESSAGE' && notification.data.chatRoomId) {
+            console.log("IN HANDLE NOTIFICATION CLICK")
+            window.location.href = `/chat?customerId=${notification.data.senderId}`;
         } else if (notification.type === 'BOOKING') {
             window.location.href = '/bookings';
         } else if (notification.type === 'MEETING') {

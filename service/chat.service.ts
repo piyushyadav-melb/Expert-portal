@@ -72,6 +72,11 @@ export const getChattedCustomers = async () => {
   return response.data.data;
 };
 
+export const getChatRoomById = async (roomId: string) => {
+  const response = await privateClient.get(`/chat/room/chat/${roomId}`);
+  return response.data.data;
+};
+
 export interface FileUploadResponse {
   id: string;
   fileName: string;

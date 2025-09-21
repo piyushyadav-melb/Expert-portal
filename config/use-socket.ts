@@ -58,15 +58,37 @@ export const useSocket = () => {
 
       // Remove duplicate notification handlers - let the notification service handle these
       globalSocket.on("notification", (data) => {
-        console.log("General notification received:", data);
       });
 
       globalSocket.on("bookingNotification", (data) => {
-        console.log("Booking notification received:", data);
       });
 
       globalSocket.on("meetingNotification", (data) => {
-        console.log("Meeting notification received:", data);
+      });
+
+      // Handle unread count updates
+      globalSocket.on("unreadCountUpdated", (data) => {
+        // This will be handled by the chat sidebar
+      });
+
+      // Handle chat unread count updates
+      globalSocket.on("chatUnreadCountUpdated", (data) => {
+        // This will be handled by the chat sidebar
+      });
+
+      // Handle all chat unread counts response
+      globalSocket.on("allChatUnreadCountsResponse", (data) => {
+        // This will be handled by the chat sidebar
+      });
+
+      // Handle messages read events
+      globalSocket.on("messagesRead", (data) => {
+        // This will be handled by the chat sidebar
+      });
+
+      // Handle new messages
+      globalSocket.on("newMessage", (data) => {
+        // This will be handled by the chat sidebar
       });
 
       socketRef.current = globalSocket;
@@ -76,8 +98,11 @@ export const useSocket = () => {
 
     // Cleanup on unmount - only if this is the last component using the socket
     return () => {
-      // Don't disconnect here as other components might be using it
-      // The disconnection should be handled at app level or on logout
+      globalSocket?.off('unreadCountUpdated');
+      globalSocket?.off('unreadCountResponse');
+      globalSocket?.off('unreadCountError');
+      globalSocket?.off('userStatusChanged');
+      globalSocket?.off('messagesRead');
     };
   }, []);
 

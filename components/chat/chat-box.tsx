@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Send, Search, X, ChevronLeft, ChevronRight, Paperclip, Square, Mic, Pause, PlayCircle } from 'lucide-react';
+import { Send, Search, X, ChevronLeft, ChevronRight, Paperclip, Square, Mic, Pause, PlayCircle, Check, CheckCheck } from 'lucide-react';
 import { useSocket } from "@/config/use-socket";
 import { getChatHistory, sendMessage, uploadFile, type Message, type FileUploadResponse } from "@/service/chat.service";
 import { getTimeFromTimestamp, to12HourFormat, getFileTypeFromMimeType, formatFileSize } from "@/utils/helper";
@@ -37,7 +37,7 @@ const ChatBox = ({ roomId, customer }) => {
     const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
     const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
     const [recordingTimer, setRecordingTimer] = useState<NodeJS.Timeout | null>(null);
-
+    const [unreadCount, setUnreadCount] = useState<any>()
 
     const socket = useSocket();
 
@@ -70,6 +70,16 @@ const ChatBox = ({ roomId, customer }) => {
     const getUserStatus = (userId) => {
         // Use customer data directly from props (managed by parent)
         return customer?.is_online ? 'online' : 'offline';
+    };
+
+    const getMessageTickStatus = (message: Message) => {
+        // Only show ticks for messages sent by the expert
+        if (message.senderType !== "EXPERT") {
+            return null;
+        }
+
+        // Return tick status based on read status
+        return message.is_read ? 'read' : 'sent';
     };
 
     // Initialize chat and join room
@@ -108,6 +118,7 @@ const ChatBox = ({ roomId, customer }) => {
         const cleanup = () => {
             socket.off("newMessage");
             socket.off("userTyping");
+            socket.off("messageRead");
         };
 
         // Clean up any existing listeners first
@@ -116,6 +127,14 @@ const ChatBox = ({ roomId, customer }) => {
         const handleNewMessage = (message: Message) => {
             if (message.chatRoomId === roomId) {
                 setMessages((prev) => [...prev, message]);
+
+                // Mark as read if the message is from the customer
+                if (message.senderType === 'CUSTOMER' && profile?.id) {
+                    socket.emit('markAsRead', {
+                        chatRoomId: roomId,
+                        receiverId: profile.id
+                    });
+                }
             }
         };
 
@@ -125,9 +144,22 @@ const ChatBox = ({ roomId, customer }) => {
             }
         };
 
+        const handleMessageRead = (data) => {
+            console.log("Message read:", data);
+
+            if (data.chatRoomId === roomId) {
+                // Update the read status for messages in this room
+                setMessages(prev => prev.map(msg =>
+                    msg.senderType === "EXPERT" && !msg.is_read
+                        ? { ...msg, is_read: true }
+                        : msg
+                ));
+            }
+        };
+
         socket.on("newMessage", handleNewMessage);
         socket.on("userTyping", handleUserTyping);
-
+        socket.on("messagesRead", handleMessageRead);
         return cleanup;
     }, [socket, roomId, customer?.id]);
     // Join room effect
@@ -140,6 +172,17 @@ const ChatBox = ({ roomId, customer }) => {
             });
         }
     }, [socket, roomId, customer?.id]);
+
+    useEffect(() => {
+        if (socket && roomId && profile?.id) {
+            // Mark messages as read when entering the chat room
+            socket.emit('markAsRead', {
+                chatRoomId: roomId,
+                receiverId: profile.id
+            });
+        }
+    }, [socket, roomId, profile?.id]);
+
 
     useEffect(() => {
         setMessages([]);
@@ -712,12 +755,23 @@ const ChatBox = ({ roomId, customer }) => {
                                             </div>
                                         )}
 
-                                        <span className="text-xs text-gray-400 float-right mt-1">
-                                            {new Date(message.timestamp).toLocaleTimeString([], {
-                                                hour: '2-digit',
-                                                minute: '2-digit'
-                                            })}
-                                        </span>
+                                        <div className="flex items-center justify-end gap-1 mt-1">
+                                            <span className="text-xs text-gray-400">
+                                                {new Date(message.timestamp).toLocaleTimeString([], {
+                                                    hour: '2-digit',
+                                                    minute: '2-digit'
+                                                })}
+                                            </span>
+                                            {getMessageTickStatus(message) && (
+                                                <div className="flex items-center">
+                                                    {getMessageTickStatus(message) === 'read' ? (
+                                                        <CheckCheck className="w-3 h-3 text-blue-400" />
+                                                    ) : (
+                                                        <Check className="w-3 h-3 text-gray-400" />
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
 
                                     {/* Profile Picture on Right Side for sent messages */}
