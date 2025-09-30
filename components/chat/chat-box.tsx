@@ -82,6 +82,49 @@ const ChatBox = ({ roomId, customer }) => {
         return message.is_read ? 'read' : 'sent';
     };
 
+    // Group messages by date
+    const groupMessagesByDate = (messages: Message[]) => {
+        const groups: { [key: string]: Message[] } = {};
+
+        messages.forEach(message => {
+            const messageDate = new Date(message.timestamp);
+            const dateKey = messageDate.toDateString(); // e.g., "Mon Dec 25 2023"
+
+            if (!groups[dateKey]) {
+                groups[dateKey] = [];
+            }
+            groups[dateKey].push(message);
+        });
+
+        return groups;
+    };
+
+    // Format date for display
+    const formatDateForDisplay = (dateString: string) => {
+        const messageDate = new Date(dateString);
+        const today = new Date();
+        const yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+
+        // Reset time to compare only dates
+        const messageDateOnly = new Date(messageDate.getFullYear(), messageDate.getMonth(), messageDate.getDate());
+        const todayOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+        const yesterdayOnly = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
+
+        if (messageDateOnly.getTime() === todayOnly.getTime()) {
+            return "Today";
+        } else if (messageDateOnly.getTime() === yesterdayOnly.getTime()) {
+            return "Yesterday";
+        } else {
+            return messageDate.toLocaleDateString('en-US', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+        }
+    };
+
     // Initialize chat and join room
     useEffect(() => {
         const initializeChat = async () => {
@@ -589,8 +632,6 @@ const ChatBox = ({ roomId, customer }) => {
                 </div>
             </div>
 
-
-
             {/* Search Bar */}
             <div className="flex items-center gap-2 px-4 py-2 border-b border-gray-200">
                 <div className="relative flex-1">
@@ -645,7 +686,6 @@ const ChatBox = ({ roomId, customer }) => {
                 )}
             </div>
 
-
             {/* Messages Container */}
             <div className="flex-1 p-4 overflow-y-auto flex flex-col-reverse" style={{ scrollbarWidth: 'thin' }}>
                 {isLoading ? (
@@ -658,143 +698,159 @@ const ChatBox = ({ roomId, customer }) => {
                     </div>
                 ) : (
                     <>
-                        {(isSearchMode ? searchResults : [...messages].reverse()).map((message: any, index) => {
-                            const isHighlighted = isSearchMode && searchResults.findIndex(m => m.id === message.id) === currentSearchIndex;
+                        {(() => {
+                            const messagesToRender = isSearchMode ? searchResults : [...messages].reverse();
+                            const messageGroups = groupMessagesByDate(messagesToRender);
+                            const sortedDates = Object.keys(messageGroups).sort((a, b) =>
+                                new Date(b).getTime() - new Date(a).getTime() // Reverse date order for flex-col-reverse
+                            );
 
-                            return (
-                                <div
-                                    key={message.id}
-                                    className={`flex items-start space-x-2 mb-4 ${message.senderType === "EXPERT" ? "justify-end" : "justify-start"
-                                        } ${isHighlighted ? "bg-yellow-100 rounded-lg p-2" : ""}`}
-                                >
-
-                                    {/* Profile Picture on Left Side for received messages */}
-                                    {message.senderType === "CUSTOMER" && (
-                                        <div className="relative w-8 h-8 mt-1">
-                                            {hasValidProfilePicture(customer.profile_picture_url) ? (
-                                                <img
-                                                    src={customer.profile_picture_url}
-                                                    alt="Customer"
-                                                    className="rounded-full w-8 h-8 object-cover"
-                                                />
-                                            ) : (
-                                                <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-semibold">
-                                                    {getInitials(customer.name)}
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-
-                                    {/* Message Content */}
-                                    <div
-                                        className={`rounded-xl pt-1.5 pb-1 px-3 max-w-xs lg:max-w-md ${message.senderType === "EXPERT"
-                                            ? "bg-blue-600 text-white rounded-br-none"
-                                            : "bg-gray-100 text-gray-900 rounded-bl-none"
-                                            }`}
-                                    >
-                                        {message.content && (
-                                            <p className="text-xs leading-relaxed">
-                                                {isSearchMode && messageSearchTerm ?
-                                                    highlightSearchTerm(message.content, messageSearchTerm) :
-                                                    message.content
-                                                }
-                                            </p>
-                                        )}
-
-                                        {/* File Display */}
-                                        {(message.imageLink || message.videoLink || message.audioLink || message.documentLink) && (
-                                            <div className="mt-2">
-                                                {/* Image Display */}
-                                                {message.imageLink && (
-                                                    <img
-                                                        src={message.imageLink}
-                                                        className="max-w-full h-auto rounded-lg cursor-pointer"
-                                                        alt="Image"
-                                                        onClick={() => window.open(message.imageLink, '_blank')}
-                                                    />
-                                                )}
-
-                                                {/* Video Display */}
-                                                {message.videoLink && (
-                                                    <video
-                                                        src={message.videoLink}
-                                                        controls
-                                                        className="max-w-full h-auto rounded-lg"
-                                                    />
-                                                )}
-
-
-                                                {/* Document Display */}
-                                                {message.documentLink && (
-                                                    <div
-                                                        className="inline-flex items-center gap-2 mt-1 bg-black bg-opacity-60 py-2 px-3 rounded cursor-pointer hover:bg-opacity-80 transition-colors"
-                                                        onClick={() => window.open(message.documentLink, '_blank')}
-                                                    >
-                                                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                                        </svg>
-                                                        <span className="text-xs text-white">{message?.fileName || "Document"}</span>
-                                                    </div>
-                                                )}
-
-                                                {/* Audio Display */}
-                                                {(message.audioLink) && (
-                                                    <div className="flex items-center gap-2 bg-blue-50 p-3 rounded-lg">
-                                                        <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                                                            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path>
-                                                            </svg>
-                                                        </div>
-
-                                                        <audio controls className="h-8">
-                                                            <source src={message.audioLink} type="audio/wav" />
-                                                            Your browser does not support the audio element.
-                                                        </audio>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        )}
-
-                                        <div className="flex items-center justify-end gap-1 mt-1">
-                                            <span className="text-xs text-gray-400">
-                                                {new Date(message.timestamp).toLocaleTimeString([], {
-                                                    hour: '2-digit',
-                                                    minute: '2-digit'
-                                                })}
-                                            </span>
-                                            {getMessageTickStatus(message) && (
-                                                <div className="flex items-center">
-                                                    {getMessageTickStatus(message) === 'read' ? (
-                                                        <CheckCheck className="w-3 h-3 text-blue-400" />
-                                                    ) : (
-                                                        <Check className="w-3 h-3 text-gray-400" />
-                                                    )}
-                                                </div>
-                                            )}
+                            return sortedDates.map((dateKey) => (
+                                <div key={dateKey}>
+                                    {/* Date Separator */}
+                                    <div className="flex items-center justify-center my-4">
+                                        <div className="bg-gray-200 text-gray-600 px-3 py-1 rounded-full text-xs font-medium">
+                                            {formatDateForDisplay(dateKey)}
                                         </div>
                                     </div>
 
-                                    {/* Profile Picture on Right Side for sent messages */}
-                                    {message.senderType === "EXPERT" && (
-                                        <div className="relative w-8 h-8 mt-1">
-                                            {hasValidProfilePicture(profileImage) ? (
-                                                <img
-                                                    src={profileImage}
-                                                    alt="Expert"
-                                                    className="rounded-full w-8 h-8 object-cover"
-                                                />
-                                            ) : (
-                                                <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-semibold">
-                                                    {getInitials(customer.name)}
+                                    {/* Messages for this date */}
+                                    {messageGroups[dateKey].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()).map((message: any, index) => {
+                                        const isHighlighted = isSearchMode && searchResults.findIndex(m => m.id === message.id) === currentSearchIndex;
+
+                                        return (
+                                            <div
+                                                key={message.id}
+                                                className={`flex items-start space-x-2 mb-4 ${message.senderType === "EXPERT" ? "justify-end" : "justify-start"
+                                                    } ${isHighlighted ? "bg-yellow-100 rounded-lg p-2" : ""}`}
+                                            >
+                                                {/* Profile Picture on Left Side for received messages */}
+                                                {message.senderType === "CUSTOMER" && (
+                                                    <div className="relative w-8 h-8 mt-1">
+                                                        {hasValidProfilePicture(customer.profile_picture_url) ? (
+                                                            <img
+                                                                src={customer.profile_picture_url}
+                                                                alt="Customer"
+                                                                className="rounded-full w-8 h-8 object-cover"
+                                                            />
+                                                        ) : (
+                                                            <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-semibold">
+                                                                {getInitials(customer.name)}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
+
+                                                {/* Message Content */}
+                                                <div
+                                                    className={`rounded-xl pt-1.5 pb-1 px-3 max-w-xs lg:max-w-md ${message.senderType === "EXPERT"
+                                                        ? "bg-blue-600 text-white rounded-br-none"
+                                                        : "bg-gray-100 text-gray-900 rounded-bl-none"
+                                                        }`}
+                                                >
+                                                    {message.content && (
+                                                        <p className="text-xs leading-relaxed">
+                                                            {isSearchMode && messageSearchTerm ?
+                                                                highlightSearchTerm(message.content, messageSearchTerm) :
+                                                                message.content
+                                                            }
+                                                        </p>
+                                                    )}
+
+                                                    {/* File Display */}
+                                                    {(message.imageLink || message.videoLink || message.audioLink || message.documentLink) && (
+                                                        <div className="mt-2">
+                                                            {/* Image Display */}
+                                                            {message.imageLink && (
+                                                                <img
+                                                                    src={message.imageLink}
+                                                                    className="max-w-full h-auto rounded-lg cursor-pointer"
+                                                                    alt="Image"
+                                                                    onClick={() => window.open(message.imageLink, '_blank')}
+                                                                />
+                                                            )}
+
+                                                            {/* Video Display */}
+                                                            {message.videoLink && (
+                                                                <video
+                                                                    src={message.videoLink}
+                                                                    controls
+                                                                    className="max-w-full h-auto rounded-lg"
+                                                                />
+                                                            )}
+
+                                                            {/* Document Display */}
+                                                            {message.documentLink && (
+                                                                <div
+                                                                    className="inline-flex items-center gap-2 mt-1 bg-black bg-opacity-60 py-2 px-3 rounded cursor-pointer hover:bg-opacity-80 transition-colors"
+                                                                    onClick={() => window.open(message.documentLink, '_blank')}
+                                                                >
+                                                                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                                                    </svg>
+                                                                    <span className="text-xs text-white">{message?.fileName || "Document"}</span>
+                                                                </div>
+                                                            )}
+
+                                                            {/* Audio Display */}
+                                                            {message.audioLink && (
+                                                                <div className="flex items-center gap-2 bg-blue-50 p-3 rounded-lg">
+                                                                    <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                                                                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path>
+                                                                        </svg>
+                                                                    </div>
+
+                                                                    <audio controls className="h-8">
+                                                                        <source src={message.audioLink} type="audio/wav" />
+                                                                        Your browser does not support the audio element.
+                                                                    </audio>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    )}
+
+                                                    <div className="flex items-center justify-end gap-1 mt-1">
+                                                        <span className="text-xs text-gray-400">
+                                                            {new Date(message.timestamp).toLocaleTimeString([], {
+                                                                hour: '2-digit',
+                                                                minute: '2-digit'
+                                                            })}
+                                                        </span>
+                                                        {getMessageTickStatus(message) && (
+                                                            <div className="flex items-center">
+                                                                {getMessageTickStatus(message) === 'read' ? (
+                                                                    <CheckCheck className="w-3 h-3 text-blue-400" />
+                                                                ) : (
+                                                                    <Check className="w-3 h-3 text-gray-400" />
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 </div>
-                                            )}
-                                        </div>
-                                    )}
+
+                                                {/* Profile Picture on Right Side for sent messages */}
+                                                {message.senderType === "EXPERT" && (
+                                                    <div className="relative w-8 h-8 mt-1">
+                                                        {hasValidProfilePicture(profileImage) ? (
+                                                            <img
+                                                                src={profileImage}
+                                                                alt="Expert"
+                                                                className="rounded-full w-8 h-8 object-cover"
+                                                            />
+                                                        ) : (
+                                                            <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-semibold">
+                                                                {getInitials(customer.name)}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
                                 </div>
-                            )
-                        })}
-
-
+                            ));
+                        })()}
 
                         {/* No search results message */}
                         {isSearchMode && searchResults.length === 0 && messageSearchTerm.trim() !== '' && (
@@ -947,6 +1003,7 @@ const ChatBox = ({ roomId, customer }) => {
                                 ) : null}
                             </div>
                         )}
+
                         {/* Voice Recording Display */}
                         {audioBlob && (
                             <div className="flex items-center w-full px-4 py-2 bg-green-50 border border-green-200 rounded-lg">
@@ -1058,53 +1115,51 @@ const ChatBox = ({ roomId, customer }) => {
             </div>
 
             {/* Attachment Dropdown - Positioned Outside */}
-            {
-                attachmentDropdown && (
-                    <div
-                        ref={attachmentDropdownRef}
-                        className="absolute bottom-16 right-16 bg-white shadow-xl border rounded-lg py-2 z-[9999] min-w-[140px]"
-                        style={{ boxShadow: '0 10px 25px rgba(0, 0, 0, 0.15)' }}
-                    >
-                        <label className="block px-4 py-2 text-left text-gray-700 hover:bg-gray-100 cursor-pointer">
-                            <input
-                                type="file"
-                                accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.ppt,.pptx"
-                                className="hidden"
-                                onChange={onFileUpload}
-                            />
-                            📄 Document
-                        </label>
-                        <label className="block px-4 py-2 text-left text-gray-700 hover:bg-gray-100 cursor-pointer">
-                            <input
-                                type="file"
-                                accept="image/*"
-                                className="hidden"
-                                onChange={onFileUpload}
-                            />
-                            🖼️ Photos
-                        </label>
-                        <label className="block px-4 py-2 text-left text-gray-700 hover:bg-gray-100 cursor-pointer">
-                            <input
-                                type="file"
-                                accept="video/*"
-                                className="hidden"
-                                onChange={onFileUpload}
-                            />
-                            🎥 Videos
-                        </label>
-                        <label className="block px-4 py-2 text-left text-gray-700 hover:bg-gray-100 cursor-pointer">
-                            <input
-                                type="file"
-                                accept="audio/*"
-                                className="hidden"
-                                onChange={onFileUpload}
-                            />
-                            🎵 Audio
-                        </label>
-                    </div>
-                )
-            }
-        </div >
+            {attachmentDropdown && (
+                <div
+                    ref={attachmentDropdownRef}
+                    className="absolute bottom-16 right-16 bg-white shadow-xl border rounded-lg py-2 z-[9999] min-w-[140px]"
+                    style={{ boxShadow: '0 10px 25px rgba(0, 0, 0, 0.15)' }}
+                >
+                    <label className="block px-4 py-2 text-left text-gray-700 hover:bg-gray-100 cursor-pointer">
+                        <input
+                            type="file"
+                            accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.ppt,.pptx"
+                            className="hidden"
+                            onChange={onFileUpload}
+                        />
+                        📄 Document
+                    </label>
+                    <label className="block px-4 py-2 text-left text-gray-700 hover:bg-gray-100 cursor-pointer">
+                        <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={onFileUpload}
+                        />
+                        🖼️ Photos
+                    </label>
+                    <label className="block px-4 py-2 text-left text-gray-700 hover:bg-gray-100 cursor-pointer">
+                        <input
+                            type="file"
+                            accept="video/*"
+                            className="hidden"
+                            onChange={onFileUpload}
+                        />
+                        🎥 Videos
+                    </label>
+                    <label className="block px-4 py-2 text-left text-gray-700 hover:bg-gray-100 cursor-pointer">
+                        <input
+                            type="file"
+                            accept="audio/*"
+                            className="hidden"
+                            onChange={onFileUpload}
+                        />
+                        🎵 Audio
+                    </label>
+                </div>
+            )}
+        </div>
     );
 };
 

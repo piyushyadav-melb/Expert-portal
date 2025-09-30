@@ -11,7 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { getSchedule, saveSchedule } from "@/service/schedule.service";
-import { Clock, Loader2, Plus, X } from "lucide-react";
+import { Clock, Loader2, Plus, X, Copy, Check } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -57,11 +57,25 @@ const getValidEndTimes = (startTime: string) => {
   return timeSlots.filter((time) => {
     const end24Hour = to24HourFormat(time);
     const [endHour, endMinute] = end24Hour.split(":").map(Number);
-    const endTotalMinutes = endHour * 60 + endMinute;
+    let endTotalMinutes = endHour * 60 + endMinute;
+
+    // Special case: allow crossing midnight for 11:00 PM / 11:30 PM to 12:00 AM
+    if (endTotalMinutes === 0 && startTotalMinutes >= 23 * 60) {
+      endTotalMinutes = 24 * 60; // treat 12:00 AM as 24:00 for duration calc
+    }
 
     const duration = endTotalMinutes - startTotalMinutes;
-    return duration >= 30 && duration <= 60;
+    return duration > 0 && duration >= 30 && duration <= 60;
   });
+};
+
+const isAllowedStartTime = (time: string) => {
+  const start24Hour = to24HourFormat(time);
+  const [h, m] = start24Hour.split(":").map(Number);
+  const total = h * 60 + m;
+  const min = 7 * 60;        // 7:00 AM
+  const max = 23 * 60 + 30;  // 11:30 PM
+  return total >= min && total <= max;
 };
 
 export default function Schedule() {
@@ -74,6 +88,10 @@ export default function Schedule() {
   );
   const [isLoading, setIsLoading] = useState(true);
   const [updateLoading, setUpdateLoading] = useState(false);
+  const [showCopyModal, setShowCopyModal] = useState(false);
+  const [sourceDay, setSourceDay] = useState("");
+  const [selectedDays, setSelectedDays] = useState<string[]>([]);
+  const [copySuccess, setCopySuccess] = useState(false);
 
   useEffect(() => {
     const fetchSchedule = async () => {
@@ -138,12 +156,12 @@ export default function Schedule() {
       let updatedSlot = { ...updatedSlots[index], [type]: value };
 
       if (updatedSlot.start && updatedSlot.end) {
-        if (
-          to24HourFormat(updatedSlot.start) >= to24HourFormat(updatedSlot.end)
-        ) {
-          toast.error("End time must be after start time");
-          return prev;
-        }
+        // if (
+        //   to24HourFormat(updatedSlot.start) >= to24HourFormat(updatedSlot.end)
+        // ) {
+        //   toast.error("End time must be after start time");
+        //   return prev;
+        // }
 
         const hasOverlap = updatedSlots.some(
           (slot, i) => i !== index && doSlotsOverlap(updatedSlot, slot)
@@ -224,6 +242,62 @@ export default function Schedule() {
     } finally {
       setUpdateLoading(false);
     }
+  };
+
+  const handleCopySchedule = () => {
+    if (!sourceDay) {
+      toast.error("Please select a source day");
+      return;
+    }
+
+    if (selectedDays.length === 0) {
+      toast.error("Please select at least one target day");
+      return;
+    }
+
+    if (!schedule[sourceDay].isAvailable || schedule[sourceDay].slots.length === 0) {
+      toast.error("Source day must have available time slots");
+      return;
+    }
+
+    setSchedule((prev: any) => {
+      const newSchedule = { ...prev };
+      const sourceSlots = [...prev[sourceDay].slots];
+
+      selectedDays.forEach((day) => {
+        newSchedule[day] = {
+          isAvailable: true,
+          slots: sourceSlots.map(slot => ({ ...slot }))
+        };
+      });
+
+      return newSchedule;
+    });
+
+    setCopySuccess(true);
+    toast.success(`Schedule copied from ${sourceDay} to ${selectedDays.join(", ")}`);
+
+    // Reset form
+    setTimeout(() => {
+      setShowCopyModal(false);
+      setSourceDay("");
+      setSelectedDays([]);
+      setCopySuccess(false);
+    }, 1500);
+  };
+
+  const handleDaySelection = (day: string) => {
+    if (selectedDays.includes(day)) {
+      setSelectedDays(selectedDays.filter(d => d !== day));
+    } else {
+      setSelectedDays([...selectedDays, day]);
+    }
+  };
+
+  const getAvailableDays = () => {
+    return daysOfWeek.filter(day =>
+      schedule[day].isAvailable && schedule[day].slots.length > 0
+    );
   };
 
   if (isLoading) {
@@ -328,21 +402,23 @@ export default function Schedule() {
                                   <SelectValue placeholder="Start Time" />
                                 </SelectTrigger>
                                 <SelectContent className="max-h-[200px]">
-                                  {timeSlots.map((time) => (
-                                    <SelectItem
-                                      key={time}
-                                      value={time}
-                                      disabled={schedule[day].slots.some(
-                                        (s: any, i: number) =>
-                                          i !== index &&
-                                          to24HourFormat(time) >=
-                                          to24HourFormat(s.start) &&
-                                          to24HourFormat(time) < to24HourFormat(s.end)
-                                      )}
-                                    >
-                                      {time}
-                                    </SelectItem>
-                                  ))}
+                                  {timeSlots
+                                    .filter(isAllowedStartTime)
+                                    .map((time) => (
+                                      <SelectItem
+                                        key={time}
+                                        value={time}
+                                        disabled={schedule[day].slots.some(
+                                          (s: any, i: number) =>
+                                            i !== index &&
+                                            to24HourFormat(time) >=
+                                            to24HourFormat(s.start) &&
+                                            to24HourFormat(time) < to24HourFormat(s.end)
+                                        )}
+                                      >
+                                        {time}
+                                      </SelectItem>
+                                    ))}
                                 </SelectContent>
                               </Select>
                               <div className="text-center text-xs text-gray-500">to</div>
@@ -358,22 +434,7 @@ export default function Schedule() {
                                 <SelectContent className="max-h-[200px]">
                                   {slot.start ? (
                                     getValidEndTimes(slot.start).map((time) => (
-                                      <SelectItem
-                                        key={time}
-                                        value={time}
-                                        disabled={
-                                          to24HourFormat(time) <=
-                                          to24HourFormat(slot.start) ||
-                                          schedule[day].slots.some(
-                                            (s: any, i: number) =>
-                                              i !== index &&
-                                              to24HourFormat(time) >
-                                              to24HourFormat(s.start) &&
-                                              to24HourFormat(time) <=
-                                              to24HourFormat(s.end)
-                                          )
-                                        }
-                                      >
+                                      <SelectItem key={time} value={time}>
                                         {time}
                                       </SelectItem>
                                     ))
@@ -397,7 +458,17 @@ export default function Schedule() {
         </AnimatePresence>
       </div>
 
-      <div className="mt-8 flex justify-end">
+      <div className="mt-8 flex justify-between items-center">
+        <Button
+          onClick={() => setShowCopyModal(true)}
+          variant="outline"
+          className="flex items-center gap-2"
+          disabled={getAvailableDays().length === 0}
+        >
+          <Copy className="h-4 w-4" />
+          Copy Schedule
+        </Button>
+
         <Button
           onClick={handleSave}
           disabled={updateLoading || isLoading}
@@ -406,6 +477,100 @@ export default function Schedule() {
           {updateLoading ? "Saving..." : "Save Schedule"}
         </Button>
       </div>
+
+      {/* Copy Schedule Modal */}
+      {showCopyModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            className="bg-white rounded-lg p-6 w-full max-w-md mx-4"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">Copy Schedule</h3>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowCopyModal(false)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+
+            {copySuccess ? (
+              <div className="text-center py-8">
+                <Check className="h-12 w-12 text-green-500 mx-auto mb-4" />
+                <p className="text-green-600 font-medium">Schedule copied successfully!</p>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {/* Source Day Selection */}
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Copy from which day?
+                  </label>
+                  <Select value={sourceDay} onValueChange={setSourceDay}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select source day" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {getAvailableDays().map((day) => (
+                        <SelectItem key={day} value={day}>
+                          {day}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Target Days Selection */}
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Copy to which days?
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {daysOfWeek.map((day) => (
+                      <div key={day} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`copy-${day}`}
+                          checked={selectedDays.includes(day)}
+                          onCheckedChange={() => handleDaySelection(day)}
+                          disabled={day === sourceDay}
+                        />
+                        <label
+                          htmlFor={`copy-${day}`}
+                          className={`text-sm ${day === sourceDay ? 'text-gray-400' : 'cursor-pointer'
+                            }`}
+                        >
+                          {day}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex justify-end space-x-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowCopyModal(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleCopySchedule}
+                    disabled={!sourceDay || selectedDays.length === 0}
+                    className="bg-primary hover:bg-primary/90"
+                  >
+                    Copy Schedule
+                  </Button>
+                </div>
+              </div>
+            )}
+          </motion.div>
+        </div>
+      )}
     </motion.div>
   );
 }
