@@ -9,7 +9,7 @@ export default function ThankYouPage() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      router.push("/");
+      router.push("/dashboard");
     }, 5000);
 
     return () => clearTimeout(timer);
@@ -29,7 +29,7 @@ export default function ThankYouPage() {
           </p>
         </div>
         <div className="mt-8">
-          <Button onClick={() => router.push("/")} className="w-full">
+          <Button onClick={() => router.push("/dashboard")} className="w-full">
             Return to Home
           </Button>
         </div>
