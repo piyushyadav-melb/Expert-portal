@@ -323,6 +323,15 @@ export default function Schedule() {
         Define your weekly schedule by selecting available days and time slots.
         Overlapping time slots are not allowed.
       </p>
+      <Button
+        onClick={() => setShowCopyModal(true)}
+        variant="outline"
+        className="flex items-center gap-2 mb-4"
+        disabled={getAvailableDays().length === 0}
+      >
+        <Copy className="h-4 w-4" />
+        Copy Schedule
+      </Button>
 
       <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7 gap-3">
         <AnimatePresence>
@@ -459,7 +468,7 @@ export default function Schedule() {
       </div>
 
       <div className="mt-8 flex justify-between items-center">
-        <Button
+        {/* <Button
           onClick={() => setShowCopyModal(true)}
           variant="outline"
           className="flex items-center gap-2"
@@ -467,7 +476,7 @@ export default function Schedule() {
         >
           <Copy className="h-4 w-4" />
           Copy Schedule
-        </Button>
+        </Button> */}
 
         <Button
           onClick={handleSave}
@@ -561,7 +570,6 @@ export default function Schedule() {
                   <Button
                     onClick={handleCopySchedule}
                     disabled={!sourceDay || selectedDays.length === 0}
-                    className="bg-primary hover:bg-primary/90"
                   >
                     Copy Schedule
                   </Button>
